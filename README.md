@@ -30,7 +30,3 @@ Team **Vera** develops an ML component that classifies an input image as **real*
 4. **Model deployment — API** — ML system design, REST API (FastAPI), API testing
 5. **Model deployment — packaging** — containerization (Docker), CI/CD (GitHub Actions)
 6. **Monitoring** — resource monitoring (Prometheus + Grafana), data & model drift (Alibi Detect)
-
-## License
-
-Released under the MIT License — see [LICENSE](LICENSE).
