@@ -1,0 +1,74 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+sdist/
+wheels/
+*.egg-info/
+*.egg
+
+# ---- Virtual environments ----
+.venv/
+venv/
+env/
+ENV/
+
+# ---- Environment variables / secrets ----
+.env
+.env.*
+!.env.example
+
+# ---- Jupyter ----
+.ipynb_checkpoints/
+
+# ---- Testing / linting / typing caches ----
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+
+# ---- MLOps tooling ----
+mlruns/
+mlartifacts/
+/.dvc/cache/
+/.dvc/tmp/
+.codecarbon/
+
+# ---- Data & models: content is versioned with DVC, not Git ----
+# Keep the folder structure (.gitkeep) and DVC pointers (*.dvc); ignore heavy files.
+data/**
+models/**
+!data/**/
+!models/**/
+!**/.gitkeep
+!**/*.dvc
+
+# ---- Serialized model artifacts (anywhere) ----
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+*.onnx
+*.ckpt
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+
+# ---- IDEs / editors ----
+.idea/
+.vscode/
+*.swp
