@@ -25,7 +25,7 @@
 
 
 \paragraph{Problem selection.}
-Modern text-to-image generators (Stable Diffusion, DALL-E, MidJourney, \dots) produce photorealistic images at scale, fuelling misinformation, fake reviews, and trust problems for platforms and media. Reliably telling a \textbf{real photograph} from an \textbf{AI-generated image} cannot be solved with hand-written rules --- the cues are subtle, generator-specific, and evolving --- which makes it a genuine machine-learning problem.
+Modern text-to-image generators (Stable Diffusion, DALL-E, MidJourney, \dots) produce photorealistic images at scale, fuelling misinformation, fake reviews, and trust problems for platforms and media. Reliably telling a \textbf{real photograph} from an \textbf{AI-generated image} cannot be solved with hand-written rules, the cues are subtle, generator-specific, and evolving, which makes it a genuine machine-learning problem. We target real-vs-AI detection in particular because nowadays it is increasingly difficult to recognise whether a piece of media is real or AI-generated.
 
 \smallskip
 \paragraph{ML goal.} Build, deploy, and operate an ML component that, given an input image, decides whether it is real or AI-generated, exposed as a monitored production service. Our main task is binary image classification(real vs ai\_generated), and optionally we might as well classify AI generated images among the 5 generators(which generator model owns the image).
@@ -35,7 +35,7 @@ Our focus is mostly on engineering around the model (reproducibility, QA, deploy
 
 
 
-\paragraph{What makes it unique.} Unlike a one-shot classifier trained on a single, dated generator, our component targets five recent generators (2022--2024) on realistic imagery.
+\paragraph{What makes it unique.} Unlike general image-classification tasks whose target classes are usually obvious to a human (weather, animals, traffic signs, \dots), we target a category that in the near future may be very hard to classify even for people --- telling a real image from an AI-generated one. Our component also covers \textbf{five recent} generators (2022--2024), and instead of being specific to one dataset, our component would be easily configured and used with different, bigger datasets.
 
 
 
@@ -49,6 +49,8 @@ Our focus is mostly on engineering around the model (reproducibility, QA, deploy
   \item \textbf{Output:} JSON \texttt{\{"label": "real" | "ai\_generated", "score": <float 0--1>\}}; optionally generator model as well.
   \item \textbf{Operating context:} stateless REST service, containerised, with health and metrics endpoints.
 \end{itemize}
+
+\newpage
 
 \subsection*{4.\quad Requirements}
 \noindent\textit{Priority:} \textbf{M} = Must, \textbf{S} = Should, \textbf{C} = Could.
@@ -78,98 +80,61 @@ DR-2 & Data \& train/validation/test splits to be versioned and reproducible (DV
 DR-3 & Handle class imbalance if observed in the data (via class weights or generator-balanced sampling) & M \\
 DR-4 & Make sure no leakage such as image caption shared across train/val/test sets & M \\
 DR-5 & Preprocessing to neutralise data to ensure the model does not rely on non-semantic \textbf{shortcuts} (such as aspect ratio, format) & M \\
-DR-6 & Data usage complies with licence (CC BY 4.0 + MS COCO attribution) & M \\
+DR-6 & Data usage complies with licence (CC BY 4.0, MS COCO) & M \\
 DR-7 & Reserve a held-out generator (and data records) for drift evaluation & C \\
 DR-8 & Automated data-quality checks (schema, class values, missingness, ...) & S \\
 \bottomrule
 \end{tabularx}
 
 \subsubsection*{4.3\quad Model / performance (MR) --- \textit{targets (confirm, CI/CD?)}}
-\begin{tabularx}{\textwidth}{@{}l Y l@{}}
+\begin{tabularx}{\textwidth}{@{}l Y c@{}}
 \toprule
-\textbf{ID} & \textbf{Requirement} & \textbf{Target} \\
+\textbf{ID} & \textbf{Requirement} & \textbf{Pri} \\
 \midrule
-MR-1 & In-distribution(similar test data) \textbf{balanced} accuracy & $\geq$ 0.85 \\
-MR-2 & Macro-F1 and recall on\textbf{ minority} class (usually real images) & $\geq$ 0.85 / $\geq$ 0.80 \\
-MR-3 & \textbf{PR-AUC} & $\geq$ 0.90 \\
-MR-4 & \textbf{Cross-generator} (leave-one-generator-out) balanced accuracy & $\geq$ 0.70 \\
-MR-5 & Decision threshold based on validation results (not fixed 0.5) & --- \\
-MR-6 & Model retraining is reproducible (fixed seeds, versions, tracked data) & --- \\
+MR-1 & Balanced accuracy (target $\geq$ 0.85) & S \\
+MR-2 & Macro-F1 and recall on \textbf{minority} class, usually real images (targets $\geq$ 0.85 / $\geq$ 0.80) & S \\
+MR-3 & \textbf{PR-AUC} (target $\geq$ 0.90) & S \\
+MR-4 & \textbf{Cross-generator} (leave-one-generator-out) balanced accuracy (target $\geq$ 0.70) & S \\
+MR-5 & Decision threshold based on validation results (not fixed 0.5) & M \\
+MR-6 & Model retraining is reproducible (fixed seeds, versions, tracked data) & M \\
 \bottomrule
 \end{tabularx}
 
 \smallskip
-\noindent{Rationale: accuracy alone is misleading if there is class imbalance in data, so success is defined on balanced/minority-aware metrics and on generalisation to unseen generators.}
+\noindent{Accuracy alone is misleading if there is class imbalance in data, so success would be defined on balanced/minority-aware metrics and on generalisation to unseen generators.}
 
 \subsubsection*{4.4\quad Quality / non-functional (QR)}
-\begin{tabularx}{\textwidth}{@{}l l Y@{}}
+\begin{tabularx}{\textwidth}{@{}l Y c@{}}
 \toprule
-\textbf{ID} & \textbf{Attribute} & \textbf{Requirement} \\
+\textbf{ID} & \textbf{Requirement} & \textbf{Pri} \\
 \midrule
-QR-1 & Performance & p95 inference latency $\leq$ 1\,s/image on CPU \emph{(confirm)} \\
-QR-2 & Scalability & Stateless, containerised, handles concurrent requests \\
-QR-3 & Reproducibility & One-command data pull + train; deterministic given seed \\
-QR-4 & Maintainability & Passes static analysis (Pylint/flake8) + notebook lint (Pynblint); unit-tested (Pytest) \\
-QR-5 & Energy efficiency & Training energy/CO$_2$ tracked (CodeCarbon) \\
-QR-6 & Observability & Resource metrics (Prometheus/Grafana) + \textbf{data/model drift} detection (Alibi Detect) \\
-QR-7 & Reliability & Health checks; graceful handling of bad input; best-effort uptime on free infra \\
-QR-8 & Security/Privacy & Validate inputs; do not persist user images beyond the request by default \\
-QR-9 & Portability & Reproducible Docker image on the chosen platform \\
-QR-10 & Ethics/Transparency & Document dataset scope, biases, out-of-scope uses (dataset/model cards) \\
+QR-1 & Image retrieval and processing runnable on general-purpose system resources (CPU, modest RAM) within a reasonable time (performance) & S \\
+QR-2 & Stateless, containerised, and can handle multiple requests at the same time (scalability) & S \\
+QR-3 & Code passes quality checks (Pylint/flake8), notebook lint (Pynblint), and unit tests (Pytest) (maintainability) & M \\
+QR-4 & Track training energy use and CO$_2$ emissions using CodeCarbon (energy efficiency) & S \\
+QR-5 & Monitor system resources and detect data/model drift (observability) & M \\
+QR-6 & Health checks, proper handling of invalid input, best-effort uptime on free infra (reliability) & M \\
+QR-7 & Validate inputs, and do not persist user images beyond the request (security/privacy) & M \\
+QR-8 & Reproducible Docker image on the chosen platform (portability) & M \\
+QR-9 & Automated pipeline that lints, tests, and builds/deploys the component on each change, e.g.\ GitHub Actions (CI/CD) & M \\
 \bottomrule
 \end{tabularx}
 
-\subsubsection*{4.5\quad Constraints \& assumptions (CR)}
-\begin{tabularx}{\textwidth}{@{}l Y@{}}
-\toprule
-\textbf{ID} & \textbf{Constraint / assumption} \\
-\midrule
-CR-1 & Compute limited to team laptops (Apple M4, 16\,GB) + free-tier cloud $\rightarrow$ favours transfer learning on a small model \\
-CR-2 & DVC remote is free-tier ($\sim$15\,GB) $\rightarrow$ dataset must fit (\textbf{Defactify $\sim$7.5\,GB} $\checkmark$) \\
-CR-3 & Licence: CC BY 4.0, \textbf{non-commercial academic} use, attribute paper + MS COCO \\
-CR-4 & Scope is an ML \textbf{component (API)}, not a full end-user product/UI \\
-CR-5 & Assumption: inputs resemble the training distribution (everyday photos vs full AI images), not face-swap/inpainting or adversarial inputs \\
-\bottomrule
-\end{tabularx}
+\subsubsection*{4.5\quad Challenges}
+The project runs on general-purpose laptops and free-tier cloud, so we favour transfer learning on a small model, and the dataset must fit a free-tier DVC remote ($\sim$15\,GB) --- which Defactify ($\sim$7.5\,GB) does. We use the data under \textbf{CC BY 4.0} (non-commercial academic use,MS COCO). Assuming inputs resemble the training distribution (everyday photos vs full AI images) rather than face-swaps or adversarial inputs. The main risks are:
 
-\subsection*{5.\quad Success criteria (Definition of Done)}
-\noindent The component is successful when: it is \textbf{served via a reproducible, containerised API} (FR-1--5, QR-2/9); it meets the \textbf{model targets} MR-1--4 on a \textbf{leakage-free} test set (DR-4) with \textbf{shortcuts controlled} (DR-5); it is \textbf{reproducible} (QR-3, MR-6) and \textbf{monitored for drift} (QR-6, DR-7); and all choices, limitations, and metrics are \textbf{documented} in the dataset/model cards and report (QR-10). \textit{(Numeric targets in \S4.3 to be confirmed.)}
 
-\subsection*{6.\quad Risks \& mitigations}
-\begin{tabularx}{\textwidth}{@{}Y Y@{}}
-\toprule
-\textbf{Risk} & \textbf{Mitigation} \\
-\midrule
-\textbf{Shortcut learning} (keys on square shape / format, not ``AI-ness'') & Normalise size + re-encode uniformly (DR-5); audited in EDA; report cross-generator metrics \\
-\textbf{Class imbalance (5:1)} biases predictions & Class weights / generator-stratified balanced sampling; balanced metrics (DR-3, MR-1/2) \\
-\textbf{Split leakage} (shared captions found in EDA) inflates scores & Caption-grouped re-split before training (DR-4) \\
-\textbf{Generator drift} --- fails on new generators & Leave-one-generator-out eval + drift monitoring (DR-7, MR-4, QR-6) \\
-\textbf{Dataset scope/bias} (COCO scenes, 5 generators) & Document scope/limitations honestly (QR-10); keep out-of-scope explicit \\
-\textbf{Compute/thermal limits} (passively-cooled laptop) & Transfer learning; offload heavy training to free GPU if needed (CR-1) \\
-\bottomrule
-\end{tabularx}
+\medskip
 
-\subsection*{7.\quad Requirements $\rightarrow$ milestone traceability (completeness)}
-\begin{tabularx}{\textwidth}{@{}l Y@{}}
-\toprule
-\textbf{Milestone} & \textbf{Requirements primarily verified} \\
-\midrule
-M1 Inception & DR-1, DR-6, QR-10 (this section + dataset/model cards) \\
-M2 Reproducibility & DR-2/3/4, FR-5, QR-3, MR-6 \\
-M3 Quality assurance & MR-1--5, DR-5/8, QR-4/5 \\
-M4 Deployment (API) & FR-1--4, QR-1/7/8 \\
-M5 Packaging & FR-6, QR-2/9, CI/CD \\
-M6 Monitoring & DR-7, MR-4, QR-6 \\
-\bottomrule
-\end{tabularx}
 
-\smallskip
-\noindent Every requirement is owned by a milestone and has a verification method --- the specification spans functional, data, model, quality, and operational concerns, which is what makes it \emph{complete}.
-
-\subsection*{8.\quad Uniqueness \& completeness statement}
-\begin{itemize}[leftmargin=1.4em]
-  \item \textbf{Unique:} a real-vs-AI detector trained and evaluated on \textbf{five recent generators} (not a single dated one), on \textbf{content-bias-controlled} data, and designed to be \textbf{operated and monitored} --- with an explicit \textbf{cross-generator generalisation and drift} dimension rather than a train-once classifier.
-  \item \textbf{Complete:} the requirements cover the whole ML-component lifecycle (data $\rightarrow$ model $\rightarrow$ API $\rightarrow$ packaging $\rightarrow$ monitoring), each requirement is \textbf{testable and traced to a milestone} (\S7), and scope, constraints, risks, and out-of-scope uses are stated explicitly.
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \textbf{shortcut learning} --- the model keying on non-semantic cues such as image shape or format instead of ``AI-ness'' (mitigated by normalising size and re-encoding uniformly);
+  \item \textbf{class imbalance} of roughly 5:1 fake:real (class weights / generator-stratified sampling and balanced metrics);
+  \item \textbf{split leakage} from captions shared across train/val/test, which we already observed in EDA (a caption-grouped re-split);
+  \item \textbf{generator drift}, i.e.\ degraded accuracy on unseen or newer generators (leave-one-generator-out evaluation and drift monitoring).
 \end{itemize}
-% ==================== CONTENT END ====================
+
+\paragraph{Success criteria} The component is successful when it is served via a \textbf{reproducible, containerised API}, and meets the model targets on a leakage-free test set with shortcuts controlled, while all processes monitored for drift.
+
+
 \end{document}
