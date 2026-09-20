@@ -1,0 +1,292 @@
+% =====================================================================
+%  MLOps (UPC 2026-27 Q1) - Team Vera - Project report
+%  Structure mirrors the official Atenea template (mlops_report_template.docx).
+%  Grey italic text = template "Guideline" prompts to be replaced by the team.
+%  Section 2.1.1 is filled with our finalised requirements-engineering content.
+% =====================================================================
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\guideline}[1]{\par{\color{gray}\itshape #1}\par\smallskip}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.2}
+
+\begin{document}
+
+% ============================ COVER PAGE ============================
+\begin{titlepage}
+\centering
+\vspace*{1.5cm}
+\includegraphics[width=0.55\textwidth]{images/upc-positiu-p3005.png}\par
+\vspace{3cm}
+{\large\scshape Machine Learning Systems in Production (MLOps)\par}
+\vspace{0.3cm}
+{\normalsize Master in Data Science\par}
+\vspace{3cm}
+{\Huge\bfseries Detecting Real vs.\ AI-Generated Images\par}
+\vspace{0.5cm}
+{\large\itshape Initial deliverable --- Milestones 1--3\par}
+\vspace{3cm}
+{\large\bfseries Team Vera\par}
+\vspace{0.6cm}
+{\normalsize Arman Bazarchi \quad Adri\'an Segura \quad Pablo Rodr\'iguez \quad Mario Prisco\par}
+\vfill
+\end{titlepage}
+
+% ============================== INDEX ==============================
+\tableofcontents
+\newpage
+
+% =========================== 1. INTRODUCTION =======================
+\section{Introduction}
+
+\subsection{Goal of the project}
+\guideline{Brief description of what the project is about and what the problem is to be solved. It must include the success criteria of the project.}
+
+\subsection{Teammates' evaluation}
+\guideline{Option 1: A complete team consensus on the following statement:}
+``All team members agree that they had an equal contribution to this delivery and project: completing a fair share of the team's work with acceptable/high quality, keeping commitments, and completing assignments on time, helping teammates who are having difficulty when it is easy or important''.
+
+\guideline{Option 2: There is no consensus on the above statement. Each team member evaluates (see scale 1 to 5 below) his/her peers' contributions in each delivery according to their contribution, based on CATME ratings.}
+
+\smallskip
+\noindent\textit{Figure 1. CATME ratings (from \url{https://info.catme.org/features/catme-five-dimensions/})}
+\smallskip
+
+\noindent\begin{tabularx}{\textwidth}{@{}c Y@{}}
+\toprule
+\textbf{Rating} & \textbf{Description of Rating} \\
+\midrule
+5 & Does more or higher-quality work than expected. Makes important contributions that improve the team's work. Helps teammates who are having difficulty completing their work. \\
+4 & Demonstrates behaviors described immediately above and below. \\
+3 & Completes a fair share of the team's work with acceptable quality. Keeps commitments and completes assignments on time. Helps teammates who are having difficulty when it is easy or important. \\
+2 & Demonstrates behaviors described immediately above and below. \\
+1 & Does not do a fair share of the team's work. Delivers sloppy or incomplete work. \\
+\bottomrule
+\end{tabularx}
+
+\medskip
+\guideline{Fill in the following table (received evaluations in rows):}
+\begin{center}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+ & Name 1 & Name 2 & Name 3 & Name 4 & Name 5 & Average \\
+\midrule
+Name 1 & -- &    &    &    &    &  \\
+Name 2 &    & -- &    &    &    &  \\
+Name 3 &    &    & -- &    &    &  \\
+Name 4 &    &    &    & -- &    &  \\
+Name 5 &    &    &    &    & -- &  \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =========================== 2. METHODOLOGY ========================
+
+\newpage
+
+\section{Methodology}
+
+% ----- 2.1 Milestone 1 -----
+\subsection{Milestone 1: Inception}
+
+\subsubsection{Selection of problem and requirements engineering for ML}
+
+\paragraph{Problem selection.} Modern text-to-image generators (Stable Diffusion, DALL-E, MidJourney, \dots) produce photorealistic images at scale, fuelling misinformation, fake reviews, and trust problems for platforms and media. Reliably telling a \textbf{real photograph} from an \textbf{AI-generated image} cannot be solved with hand-written rules, the cues are subtle, generator-specific, and evolving, which makes it a genuine machine-learning problem. We target real-vs-AI detection in particular because nowadays it is increasingly difficult to recognise whether a piece of media is real or AI-generated.
+
+\paragraph{ML goal.} Build, deploy, and operate an ML component that, given an input image, decides whether it is real or AI-generated, exposed as a monitored production service. Our main task is binary image classification (real vs \texttt{ai\_generated}), and optionally we might as well classify AI-generated images among the 5 generators (which generator model owns the image). Our focus is mostly on engineering around the model (reproducibility, QA, deployment, monitoring), not maximizing raw accuracy.
+
+\paragraph{What makes it unique.} Unlike general image-classification tasks whose target classes are usually obvious to a human (weather, animals, traffic signs, \dots), we target a category that in the near future may be very hard to classify even for people --- telling a real image from an AI-generated one. Our component also covers \textbf{five recent} generators (2022--2024), and instead of being specific to one dataset, our component would be easily configured and used with different, bigger datasets.
+
+\paragraph{Intended use.} As main use case of our ML component we can mention reliable platforms (such as news, social media, \dots) to distinguish real from fake (or generated) images to prevent misinformation and correctly flag likely AI-generated uploads via an API; another use case could be to quickly check the authenticity of an image with a confidence score, which is a well-documented and reproducible component for downstream developers to integrate in a larger system.
+
+\paragraph{ML component specification (I/O contract).}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \textbf{Input:} one image (JPEG/PNG/WEBP), bounded file size; preprocessed identically to training (fixed square resize + uniform re-encode).
+  \item \textbf{Output:} JSON \texttt{\{"label": "real" | "ai\_generated", "score": <float 0--1>\}}; optionally generator model as well.
+  \item \textbf{Operating context:} stateless REST service, containerised, with health and metrics endpoints.
+\end{itemize}
+
+\newpage
+
+\paragraph{Requirements.} \textit{Priority:} \textbf{M} = Must, \textbf{S} = Should, \textbf{C} = Could.
+
+\medskip\noindent\textbf{Functional (FR)}\par\smallskip
+\noindent\begin{tabularx}{\textwidth}{@{}l Y c@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Pri} \\
+\midrule
+FR-1 & Classify a single image as \texttt{real} / \texttt{ai\_generated} & M \\
+FR-2 & Return a confidence score in [0,1] with each prediction & M \\
+FR-3 & Expose prediction via a REST endpoint (\texttt{POST /predict}) returning JSON & M \\
+FR-4 & Accept JPEG/PNG/WEBP within a size limit; reject invalid input with a clear error & M \\
+FR-5 & Apply the \textbf{same} preprocessing at train and serve time (resize + re-encode) & M \\
+FR-6 & Provide health/readiness and metrics endpoints & S \\
+FR-7 & Optionally return the most-likely generator (attribution) & C \\
+\bottomrule
+\end{tabularx}
+
+
+
+\medskip\noindent\textbf{Data (DR)}\par\smallskip
+\noindent\begin{tabularx}{\textwidth}{@{}l Y c@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Pri} \\
+\midrule
+DR-1 & Use labelled real \& AI images from multiple recent generators & M \\
+DR-2 & Data \& train/validation/test splits to be versioned and reproducible (DVC) & M \\
+DR-3 & Handle class imbalance if observed in the data (via class weights or generator-balanced sampling) & M \\
+DR-4 & Make sure no leakage such as image caption shared across train/val/test sets & M \\
+DR-5 & Preprocessing to neutralise data to ensure the model does not rely on non-semantic \textbf{shortcuts} (such as aspect ratio, format) & M \\
+DR-6 & Data usage complies with licence (CC BY 4.0, MS COCO) & M \\
+DR-7 & Reserve a held-out generator (and data records) for drift evaluation & C \\
+DR-8 & Automated data-quality checks (schema, class values, missingness, \dots) & S \\
+\bottomrule
+\end{tabularx}
+
+\medskip\noindent\textbf{Model / performance (MR)}\par\smallskip
+\noindent\begin{tabularx}{\textwidth}{@{}l Y c@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Pri} \\
+\midrule
+MR-1 & Balanced accuracy (target $\geq$ 0.85) & S \\
+MR-2 & Macro-F1 and recall on \textbf{minority} class, usually real images (targets $\geq$ 0.85 / $\geq$ 0.80) & S \\
+MR-3 & \textbf{PR-AUC} (target $\geq$ 0.90) & S \\
+MR-4 & \textbf{Cross-generator} (leave-one-generator-out) balanced accuracy (target $\geq$ 0.70) & S \\
+MR-5 & Decision threshold based on validation results (not fixed 0.5) & M \\
+MR-6 & Model retraining is reproducible (fixed seeds, versions, tracked data) & M \\
+\bottomrule
+\end{tabularx}
+
+\smallskip
+\noindent Accuracy alone is misleading if there is class imbalance in data, so success would be defined on balanced/minority-aware metrics and on generalisation to unseen generators.
+
+\newpage
+
+
+\medskip\noindent\textbf{Quality / non-functional (QR)}\par\smallskip
+\noindent\begin{tabularx}{\textwidth}{@{}l Y c@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement} & \textbf{Pri} \\
+\midrule
+QR-1 & Image retrieval and processing runnable on general-purpose system resources (CPU, modest RAM) within a reasonable time (performance) & S \\
+QR-2 & Stateless, containerised, and can handle multiple requests at the same time (scalability) & S \\
+QR-3 & Code passes quality checks (Pylint/flake8), notebook lint (Pynblint), and unit tests (Pytest) (maintainability) & M \\
+QR-4 & Track training energy use and CO$_2$ emissions using CodeCarbon (energy efficiency) & S \\
+QR-5 & Monitor system resources and detect data/model drift (observability) & M \\
+QR-6 & Health checks, proper handling of invalid input, best-effort uptime on free infra (reliability) & M \\
+QR-7 & Validate inputs, and do not persist user images beyond the request (security/privacy) & M \\
+QR-8 & Reproducible Docker image on the chosen platform (portability) & M \\
+QR-9 & Automated pipeline that lints, tests, and builds/deploys the component on each change, e.g.\ GitHub Actions (CI/CD) & M \\
+\bottomrule
+\end{tabularx}
+
+\medskip\noindent\textbf{Challenges.}
+The project runs on general-purpose laptops and free-tier cloud, so we favour transfer learning on a small model, and the dataset must fit a free-tier DVC remote ($\sim$15\,GB) --- which Defactify ($\sim$7.5\,GB) does. We use the data under \textbf{CC BY 4.0} (non-commercial academic use, MS COCO), assuming inputs resemble the training distribution (everyday photos vs full AI images) rather than face-swaps or adversarial inputs. The main risks are:
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \textbf{shortcut learning} --- the model keying on non-semantic cues such as image shape or format instead of ``AI-ness'' (mitigated by normalising size and re-encoding uniformly);
+  \item \textbf{class imbalance} of roughly 5:1 fake:real (class weights / generator-stratified sampling and balanced metrics);
+  \item \textbf{split leakage} from captions shared across train/val/test, which we already observed in EDA (a caption-grouped re-split);
+  \item \textbf{generator drift}, i.e.\ degraded accuracy on unseen or newer generators (leave-one-generator-out evaluation and drift monitoring).
+\end{itemize}
+
+\paragraph{Success criteria.} The component is successful when it is served via a  reproducible, containerised API, and meets the model targets on a leakage-free test set with shortcuts controlled, while all processes monitored for drift.
+
+\subsubsection{Dataset card}
+\guideline{Brief description of the main points of the dataset card, and link to the file in the repository.}
+
+\subsubsection{Model card}
+\guideline{Brief description of the main points of the model card, and link to the file in the repository.}
+
+\subsubsection{Project coordination and communication}
+\guideline{What tools have been selected, why, and how are they used?}
+
+\subsubsection{Selection of the cloud provider}
+\guideline{Justification of the selection (to be used in Milestone 4).}
+
+% ----- 2.2 Milestone 2 -----
+\subsection{Milestone 2: Model Building -- Reproducibility}
+\guideline{Describe how the different software engineering practices and tools have been applied.}
+
+\subsubsection{Project structure}
+\guideline{(e.g., Cookiecutter)}
+
+\subsubsection{Code versioning}
+\guideline{(e.g., GitHub Flow)}
+
+\subsubsection{Data versioning}
+\guideline{(e.g., DVC)}
+
+\subsubsection{Experiment tracking}
+\guideline{(e.g., MLflow)}
+
+% ----- 2.3 Milestone 3 -----
+\subsection{Milestone 3: Model Building -- Quality Assurance}
+\guideline{Describe how the different software engineering practices and tools have been applied.}
+
+\subsubsection{Energy efficiency awareness}
+\guideline{(e.g., CodeCarbon) Reason about the energy efficiency of your ML component.}
+
+\subsubsection{Static code analysis}
+\guideline{(e.g., pylint)}
+
+\subsubsection{Model testing}
+\guideline{(e.g., pytest)}
+
+\subsubsection{Data testing}
+\guideline{(e.g., Great Expectations, Deepchecks)}
+
+% ----- 2.4 Milestone 4 -----
+\subsection{Milestone 4: Model deployment -- API}
+\guideline{Describe how you have deployed your model and the technologies used.}
+
+\subsubsection{ML-based component/system architecture}
+\guideline{Description of the physical and logical architectures of the system, including diagrams. Design patterns used. Selection and justification of design decisions (e.g., cloud provider).}
+
+\subsubsection{API design}
+\guideline{(e.g., FastAPI)}
+
+\subsubsection{API testing}
+\guideline{(e.g., FastAPI, pytest)}
+
+% ----- 2.5 Milestone 5 -----
+\subsection{Milestone 5: Model deployment -- Model packaging}
+\guideline{Describe how the different software engineering practices and tools have been applied.}
+
+\subsubsection{Container and Orchestration}
+\guideline{(e.g., Docker, Docker compose)}
+
+\subsubsection{CI/CD}
+\guideline{(e.g., GitHub Actions)}
+
+% ----- 2.6 Milestone 6 -----
+\subsection{Milestone 6: Monitoring}
+\guideline{Describe how the different software engineering practices and tools have been applied.}
+
+\subsubsection{Resource monitoring}
+\guideline{(e.g., Grafana, Prometheus)}
+
+\subsubsection{Model performance}
+\guideline{(e.g., Alibi Detect)}
+
+\subsubsection{Cycle: Feedback loops and retraining}
+\guideline{Description of all the stages of the system pipeline, and how they are connected. Explain how the pipeline can be used to automate the retraining process.}
+
+% ===================== 3. SELF-EVALUATION ==========================
+\section{Self-evaluation of the project (retrospective)}
+\guideline{To do in the final deliverable.}
+\guideline{Explain the main challenges, barriers, and opportunities you encountered during the project. Describe what you have learned, what you would do differently, etc.}
+\guideline{Explain what concepts you have used from other courses.}
+
+\end{document}
