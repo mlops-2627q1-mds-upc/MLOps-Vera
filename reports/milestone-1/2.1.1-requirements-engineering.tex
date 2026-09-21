@@ -121,7 +121,7 @@ QR-9 & Automated pipeline that lints, tests, and builds/deploys the component on
 \end{tabularx}
 
 \subsubsection*{4.5\quad Challenges}
-The project runs on general-purpose laptops and free-tier cloud, so we favour transfer learning on a small model, and the dataset must fit a free-tier DVC remote ($\sim$15\,GB) --- which Defactify ($\sim$7.5\,GB) does. We use the data under \textbf{CC BY 4.0} (non-commercial academic use,MS COCO). Assuming inputs resemble the training distribution (everyday photos vs full AI images) rather than face-swaps or adversarial inputs. The main risks are:
+The project runs on general-purpose laptops and free-tier cloud, so we favour transfer learning on a small model, and the dataset must fit a free-tier DVC remote ($\sim$15\,GB) --- which our selected dataset (Defactify $\sim$7.5\,GB) does. We use the data under \textbf{CC BY 4.0} (non-commercial academic use,MS COCO). Assuming inputs resemble the training distribution (everyday photos vs full AI images) rather than face-swaps or adversarial inputs. The main risks are:
 
 
 \medskip
@@ -136,5 +136,55 @@ The project runs on general-purpose laptops and free-tier cloud, so we favour tr
 
 \paragraph{Success criteria} The component is successful when it is served via a \textbf{reproducible, containerised API}, and meets the model targets on a leakage-free test set with shortcuts controlled, while all processes monitored for drift.
 
+
+\newpage
+\section*{2.1.2\quad Dataset card}
+\textit{Summary of the dataset card; the full card lives in the repository (e.g., \texttt{docs/dataset\_card.md}). Source: \href{https://huggingface.co/datasets/Rajarshi-Roy-research/Defactify_Image_Dataset}{Defactify / MS-COCOAI on Hugging Face} (\texttt{Rajarshi-Roy-research/Defactify\_Image\_Dataset}), arXiv 2601.00553.}
+
+\paragraph{Dataset summary.} Defactify (MS-COCOAI) pairs real photographs from \textbf{MS COCO} with AI-generated images produced from the \emph{same captions} by five recent text-to-image generators, for the task of detecting real vs.\ AI-generated images (and, optionally, attributing the generator).
+
+\paragraph{Contents \& structure.} 96{,}000 image--caption records: \textbf{16{,}000 real} (MS COCO) and \textbf{80{,}000 AI-generated} (16{,}000 each from Stable Diffusion 2.1, SDXL, Stable Diffusion 3, DALL-E 3, MidJourney v6). Fields: \texttt{Caption}, \texttt{Image}, \texttt{Label\_A} (0 = real, 1 = AI), \texttt{Label\_B} (0 = real, 1--5 = generator). Splits: train 42{,}000 / validation 9{,}000 / test 45{,}000. Images are JPEG at variable resolution ($\sim$270$\times$270 to 1024$\times$1024).
+
+\paragraph{How it was created.} The authors generated one synthetic image per MS COCO caption for each generator, so every real image has generated counterparts from the same prompt. This \textbf{controls for content bias}: a detector must key on \emph{how} an image was made, not \emph{what} it shows.
+
+\paragraph{Intended uses.} Training and evaluating real-vs-AI classifiers (Task~A) and generator-attribution models (Task~B); studying cross-generator generalisation and drift.
+
+\paragraph{Considerations, biases \& limitations} (from our exploratory analysis, data-exploration.ipynb):
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \textbf{Class imbalance:} the binary task is $\sim$5:1 fake:real (Task~B is balanced).
+  \item \textbf{Aspect-ratio shortcut:} generated images are almost all square while real photos are not ($\sim$100\% vs $\sim$4\% square in our sample) --- resize/normalise to avoid the model cheating on shape.
+  \item \textbf{Split leakage:} some captions appear across train/val/test; use a caption-grouped re-split before evaluation.
+  \item \textbf{Scope:} everyday COCO scenes and five specific 2022--2024 generators; not representative of deepfake face-swaps, adversarial inputs, or newer generators.
+  \item \textbf{Privacy/representation:} MS COCO photos may contain people and reflect MS COCO's own collection biases.
+\end{itemize}
+
+\paragraph{Licence \& citation.} \textbf{CC BY 4.0} (author-declared in arXiv 2601.00553); real images additionally follow MS COCO's terms. Attribute both the paper and MS COCO.
+
+\newpage
+\section*{2.1.3\quad Model card}
+\textit{Model card following Mitchell et al.\ (2019). At inception the model is not yet trained; quantitative results are completed in Milestones 2--3. The full card lives in the repository (e.g., \texttt{docs/model\_card.md}).}
+
+\paragraph{Model details.} Real-vs-AI image classifier by \textbf{Team Vera} (UPC MLOps, 2026--27). Version 0.1 (planned). Type: binary image classifier built by \textbf{transfer learning} --- a pretrained backbone (e.g., ResNet or a frozen CLIP encoder) with a lightweight classification head; final architecture and hyper-parameters are set in Milestone~2 and tracked with MLflow. Trained on the Defactify dataset. Licence: code under the repository licence; data under CC BY 4.0. Contact: Team Vera (see cover).
+
+\paragraph{Intended use.}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \textbf{Primary uses:} decide whether an input image is real or AI-generated, with a confidence score (optionally attribute the generator).
+  \item \textbf{Primary users:} content-moderation/platform back-ends, journalists/fact-checkers, and developers integrating the component via its API.
+  \item \textbf{Out-of-scope:} deepfake face-swap or partial-manipulation forensics, adversarially-perturbed inputs, generators far outside the training set, and any high-stakes decision without human review.
+\end{itemize}
+
+\paragraph{Factors.} Relevant factors: generator family (SD2.1, SDXL, SD3, DALL-E 3, MJ v6), image resolution/aspect ratio, and content domain (COCO-like scenes). Evaluation is reported \emph{per generator} (leave-one-generator-out) as well as overall.
+
+\paragraph{Metrics.} Balanced accuracy, macro-F1, PR-AUC, and recall on the minority (real) class; the decision threshold is tuned on validation rather than fixed at 0.5. Performance variation is reported across generators. (Targets: see MR-1--MR-4.)
+
+\paragraph{Evaluation data.} The Defactify \textbf{test} split, re-split by caption to be leakage-free. Preprocessing: centre-crop/resize to a fixed square and uniform re-encoding so shape and format cannot leak the label.
+
+\paragraph{Training data.} The Defactify \textbf{train} split (same preprocessing). Class imbalance handled via class weights or generator-stratified balanced sampling.
+
+\paragraph{Quantitative analyses.} \emph{To be completed in Milestones 2--3}: overall metrics on the leakage-free test set and per-generator (unitary) results, including the leave-one-generator-out drift experiment.
+
+\paragraph{Ethical considerations.} Dual-use (a detector can be evaded); false positives may wrongly flag genuine images, so outputs are advisory and expect human oversight. The dataset's scope and biases (above) bound where the model is valid. Training energy/CO$_2$ is tracked with CodeCarbon.
+
+\paragraph{Caveats \& recommendations.} Guard against the aspect-ratio/format shortcut; expect accuracy to drop on unseen or newer generators (monitor drift and retrain as needed); the model is trained on modest-resolution, COCO-domain images and should not be assumed to transfer out-of-domain. Results are pending until training in Milestones 2--3.
 
 \end{document}
