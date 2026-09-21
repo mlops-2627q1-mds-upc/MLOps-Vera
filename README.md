@@ -15,7 +15,7 @@ Team **Vera** develops an ML component that classifies an input image as **real*
 
 ## Dataset
 
-We use **[Defactify / MS-COCOAI](https://huggingface.co/datasets/Rajarshi-Roy-research/Defactify_Image_Dataset)** ([paper](https://arxiv.org/abs/2601.00553)): 96,000 images — 16k real **MS COCO** photos and 80k from **five recent generators** (Stable Diffusion 2.1, SDXL, Stable Diffusion 3, DALL·E 3, MidJourney v6) — released under **CC BY 4.0**. Initial exploration lives in [`notebooks/1.0-arb-initial-data-exploration.ipynb`](notebooks/1.0-arb-initial-data-exploration.ipynb).
+We use **[Defactify / MS-COCOAI](https://huggingface.co/datasets/Rajarshi-Roy-research/Defactify_Image_Dataset)** ([paper](https://arxiv.org/abs/2601.00553)): 96,000 images — 16k real **MS COCO** photos and 80k from **five recent generators** (Stable Diffusion 2.1, SDXL, Stable Diffusion 3, DALL·E 3, MidJourney v6) — released under **CC BY 4.0**. Initial exploration lives in [`notebooks/data-exploration.ipynb`](notebooks/data-exploration.ipynb).
 
 ### Why Defactify (dataset decision)
 
