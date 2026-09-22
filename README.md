@@ -32,7 +32,7 @@ We initially scoped the project around **CIFAKE**, then switched to Defactify af
 | --- | --- |
 | Arman Bazarchi | [@armanbzi](https://github.com/armanbzi) |
 | Adrián Segura | [@AdriSegurao](https://github.com/AdriSegurao) |
-| Pablo Rodríguez | — |
+| Pablo Rodríguez | [@PabloRodriguezElvira](https://github.com/PabloRodriguezElvira) |
 | Mario Prisco | — |
 
 ## Milestones
