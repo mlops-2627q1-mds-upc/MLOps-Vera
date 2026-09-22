@@ -1,0 +1,49 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "mlops_vera"
+version = "0.0.1"
+description = "Detecting real vs. AI-generated images"
+authors = [
+  { name = "Team Vera" },
+]
+
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    
+]
+dependencies = [
+    "loguru",
+    "numpy>=2.5.3",
+    "pandas>=3.0.6",
+    "pip",
+    "python-dotenv",
+    "ruff",
+    "tqdm",
+    "typer",
+]
+requires-python = "~=3.12.0"
+
+
+[tool.ruff]
+line-length = 99
+src = ["mlops_vera"]
+include = ["pyproject.toml", "mlops_vera/**/*.py"]
+
+[tool.ruff.lint]
+extend-select = ["I"]  # Add import sorting
+
+[tool.ruff.lint.isort]
+known-first-party = ["mlops_vera"]
+force-sort-within-sections = true
+
+[dependency-groups]
+dev = [
+    "black>=26.5.1",
+    "pylint>=4.0.8",
+    "pytest>=9.1.1",
+]
+
