@@ -207,8 +207,21 @@ The project runs on general-purpose laptops and free-tier cloud, so we favour tr
 \textit{Summary of the dataset card; the full card lives in the repository (e.g., \texttt{docs/dataset\_card.md}). Source: \href{https://huggingface.co/datasets/Rajarshi-Roy-research/Defactify_Image_Dataset}{Defactify / MS-COCOAI on Hugging Face} (\texttt{Rajarshi-Roy-research/Defactify\_Image\_Dataset}), arXiv 2601.00553.}
 
 \paragraph{Dataset summary.} Defactify (MS-COCOAI) pairs real photographs from \textbf{MS COCO} with AI-generated images produced from the \emph{same captions} by five recent text-to-image generators, for the task of detecting real vs.\ AI-generated images (and, optionally, attributing the generator).
+ 96{,}000 image--caption records: \textbf{16{,}000 real} (MS COCO) and \textbf{80{,}000 AI-generated} (16{,}000 each from Stable Diffusion 2.1, SDXL, Stable Diffusion 3, DALL-E 3, MidJourney v6).
 
-\paragraph{Contents \& structure.} 96{,}000 image--caption records: \textbf{16{,}000 real} (MS COCO) and \textbf{80{,}000 AI-generated} (16{,}000 each from Stable Diffusion 2.1, SDXL, Stable Diffusion 3, DALL-E 3, MidJourney v6). Fields: \texttt{Caption}, \texttt{Image}, \texttt{Label\_A} (0 = real, 1 = AI), \texttt{Label\_B} (0 = real, 1--5 = generator). Splits: train 42{,}000 / validation 9{,}000 / test 45{,}000. Images are JPEG at variable resolution ($\sim$270$\times$270 to 1024$\times$1024).
+\paragraph{Data fields.} Each record (row) of the dataset contains the following fields:
+
+\smallskip
+\noindent\begin{tabularx}{\textwidth}{@{}l Y l@{}}
+\toprule
+\textbf{Field} & \textbf{Description} & \textbf{Data type} \\
+\midrule
+\texttt{Caption} & The text prompt used to generate the image, or the descriptive caption for real images & \texttt{string} \\
+\texttt{Image} & The actual image content (e.g., \texttt{.jpg}, \texttt{.png}) & \texttt{Image} \\
+\texttt{Label\_A} & \textbf{Task A:} binary label for image veracity & \texttt{ClassLabel} (int) \\
+\texttt{Label\_B} & \textbf{Task B:} label specifying the generation source/model & \texttt{ClassLabel} (int) \\
+\bottomrule
+\end{tabularx}
 
 \paragraph{How it was created.} The authors generated one synthetic image per MS COCO caption for each generator, so every real image has generated counterparts from the same prompt. This \textbf{controls for content bias}: a detector must key on \emph{how} an image was made, not \emph{what} it shows.
 
