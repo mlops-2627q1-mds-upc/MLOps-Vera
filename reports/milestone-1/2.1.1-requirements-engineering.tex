@@ -143,11 +143,66 @@ The project runs on general-purpose laptops and free-tier cloud, so we favour tr
 
 \paragraph{Dataset summary.} Defactify (MS-COCOAI) pairs real photographs from \textbf{MS COCO} with AI-generated images produced from the \emph{same captions} by five recent text-to-image generators, for the task of detecting real vs.\ AI-generated images (and, optionally, attributing the generator).
 
-\paragraph{Contents \& structure.} 96{,}000 image--caption records: \textbf{16{,}000 real} (MS COCO) and \textbf{80{,}000 AI-generated} (16{,}000 each from Stable Diffusion 2.1, SDXL, Stable Diffusion 3, DALL-E 3, MidJourney v6). Fields: \texttt{Caption}, \texttt{Image}, \texttt{Label\_A} (0 = real, 1 = AI), \texttt{Label\_B} (0 = real, 1--5 = generator). Splits: train 42{,}000 / validation 9{,}000 / test 45{,}000. Images are JPEG at variable resolution ($\sim$270$\times$270 to 1024$\times$1024).
+\paragraph{Contents \& structure.} 96{,}000 image--caption records: \textbf{16{,}000 real} (MS COCO) and \textbf{80{,}000 AI-generated} (16{,}000 each from Stable Diffusion 2.1, SDXL, Stable Diffusion 3, DALL-E 3, MidJourney v6). Splits: train 42{,}000 / validation 9{,}000 / test 45{,}000. Images are JPEG at variable resolution ($\sim$270$\times$270 to 1024$\times$1024).
+
+\paragraph{Data fields.} Each record (row) of the dataset contains the following fields:
+
+\smallskip
+\noindent\begin{tabularx}{\textwidth}{@{}l Y l@{}}
+\toprule
+\textbf{Field} & \textbf{Description} & \textbf{Data type} \\
+\midrule
+\texttt{Caption} & The text prompt used to generate the image, or the descriptive caption for real images & \texttt{string} \\
+\texttt{Image} & The actual image content (e.g., \texttt{.jpg}, \texttt{.png}) & \texttt{Image} \\
+\texttt{Label\_A} & \textbf{Task A:} binary label for image veracity & \texttt{ClassLabel} (int) \\
+\texttt{Label\_B} & \textbf{Task B:} label specifying the generation source/model & \texttt{ClassLabel} (int) \\
+\bottomrule
+\end{tabularx}
+
+\medskip
 
 \paragraph{How it was created.} The authors generated one synthetic image per MS COCO caption for each generator, so every real image has generated counterparts from the same prompt. This \textbf{controls for content bias}: a detector must key on \emph{how} an image was made, not \emph{what} it shows.
 
+\medskip
+\medskip
+
+\medskip
+\noindent
+\begin{minipage}[t]{0.48\textwidth}
+\small\centering
+\textbf{\texttt{Label\_A}}\\
+Binary Veracity Classification\\[3pt]
+\begin{tabularx}{\linewidth}{@{}l c Y@{}}
+\toprule
+\textbf{Label} & \textbf{Value} & \textbf{Description} \\
+\midrule
+Real & 0 & Image is a real photograph / non-AI generated \\
+AI-Generated & 1 & Image was created by an AI generation model \\
+\bottomrule
+\end{tabularx}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\small\centering
+\textbf{\texttt{Label\_B}}\\
+Model Source Identification\\[3pt]
+\begin{tabularx}{\linewidth}{@{}l c Y@{}}
+\toprule
+\textbf{Label} & \textbf{Value} & \textbf{Model / source} \\
+\midrule
+Real & 0 & Real image (no AI generation) \\
+SD21 & 1 & Stable Diffusion 2.1 \\
+SDXL & 2 & Stable Diffusion XL \\
+SD3 & 3 & Stable Diffusion 3 \\
+DALLE3 & 4 & DALL-E 3 \\
+Midjourney & 5 & Midjourney 6 \\
+\bottomrule
+\end{tabularx}
+\end{minipage}
+
+
 \paragraph{Intended uses.} Training and evaluating real-vs-AI classifiers (Task~A) and generator-attribution models (Task~B); studying cross-generator generalisation and drift.
+
+\newpage
 
 \paragraph{Considerations, biases \& limitations} (from our exploratory analysis, data-exploration.ipynb):
 \begin{itemize}[nosep,leftmargin=1.4em]
@@ -159,6 +214,25 @@ The project runs on general-purpose laptops and free-tier cloud, so we favour tr
 \end{itemize}
 
 \paragraph{Licence \& citation.} \textbf{CC BY 4.0} (author-declared in arXiv 2601.00553); real images additionally follow MS COCO's terms. Attribute both the paper and MS COCO.
+
+\paragraph{Citation (BibTeX).}
+\begin{verbatim}
+@misc{roy2026comprehensivedatasethumanvs,
+  title  = {A Comprehensive Dataset for Human vs. AI Generated Image Detection},
+  author = {Rajarshi Roy and Ashhar Aziz and Shashwat Bajpai and
+            Nasrin Imanpour and Gurpreet Singh and Shwetangshu Biswas and
+            Kapil Wanaskar and Parth Patwa and Subhankar Ghosh and
+            Shreyas Dixit and Nilesh Ranjan Pal and Vipula Rawte and
+            Ritvik Garimella and Amitava Das and Amit Sheth and
+            Gaytri Jena and Vasu Sharma and Aishwarya Naresh Reganti and
+            Vinija Jain and Aman Chadha},
+  year   = {2026},
+  eprint = {2601.00553},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CV},
+  url    = {https://arxiv.org/abs/2601.00553}
+}
+\end{verbatim}
 
 \newpage
 \section*{2.1.3\quad Model card}

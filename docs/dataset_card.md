@@ -39,9 +39,50 @@ Images, paired with English captions (from MS COCO).
 
 - **Size:** 96,000 image–caption records.
 - **Composition:** 16,000 real (MS COCO) + 80,000 AI-generated (16,000 each from Stable Diffusion 2.1, SDXL, Stable Diffusion 3, DALL·E 3, MidJourney v6).
-- **Fields:** `Caption` (string), `Image` (image), `Label_A` (int: 0 = real, 1 = AI-generated), `Label_B` (int: 0 = real, 1–5 = generator).
 - **Splits:** train 42,000 / validation 9,000 / test 45,000.
 - **Format / resolution:** JPEG, variable resolution (~270×270 up to 1024×1024).
+
+### Data fields
+
+Each record (row) of the dataset contains the following fields:
+
+| Field | Description | Data type |
+|---|---|---|
+| `Caption` | The text prompt used to generate the image, or the descriptive caption for real images | `string` |
+| `Image` | The actual image content (e.g., `.jpg`, `.png`) | `Image` |
+| `Label_A` | **Task A:** binary label for image veracity | `ClassLabel` (int) |
+| `Label_B` | **Task B:** label specifying the generation source/model | `ClassLabel` (int) |
+
+### Label definitions
+
+<table>
+<tr>
+<th><code>Label_A</code> — Binary Veracity Classification</th>
+<th><code>Label_B</code> — Model Source Identification</th>
+</tr>
+<tr>
+<td valign="top">
+
+| Label | Value | Description |
+|---|:---:|---|
+| Real | 0 | Image is a real photograph / non-AI generated |
+| AI-Generated | 1 | Image was created by an AI generation model |
+
+</td>
+<td valign="top">
+
+| Label | Value | Model / source |
+|---|:---:|---|
+| Real | 0 | Real image (no AI generation) |
+| SD21 | 1 | Stable Diffusion 2.1 |
+| SDXL | 2 | Stable Diffusion XL |
+| SD3 | 3 | Stable Diffusion 3 |
+| DALLE3 | 4 | DALL-E 3 |
+| Midjourney | 5 | Midjourney 6 |
+
+</td>
+</tr>
+</table>
 
 ## Dataset creation
 
@@ -70,3 +111,23 @@ Centre-crop/resize every image to a fixed square and re-encode all images to one
 
 - Defactify / MS-COCOAI — *A Comprehensive Dataset for Human vs. AI Generated Image Detection*, [arXiv 2601.00553](https://arxiv.org/abs/2601.00553).
 - MS COCO — Lin et al., *Microsoft COCO: Common Objects in Context*, 2014.
+
+BibTeX (Defactify):
+
+```bibtex
+@misc{roy2026comprehensivedatasethumanvs,
+  title  = {A Comprehensive Dataset for Human vs. AI Generated Image Detection},
+  author = {Rajarshi Roy and Ashhar Aziz and Shashwat Bajpai and
+            Nasrin Imanpour and Gurpreet Singh and Shwetangshu Biswas and
+            Kapil Wanaskar and Parth Patwa and Subhankar Ghosh and
+            Shreyas Dixit and Nilesh Ranjan Pal and Vipula Rawte and
+            Ritvik Garimella and Amitava Das and Amit Sheth and
+            Gaytri Jena and Vasu Sharma and Aishwarya Naresh Reganti and
+            Vinija Jain and Aman Chadha},
+  year   = {2026},
+  eprint = {2601.00553},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CV},
+  url    = {https://arxiv.org/abs/2601.00553}
+}
+```
