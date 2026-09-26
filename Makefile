@@ -58,10 +58,15 @@ create_environment:
 #################################################################################
 
 
-## Make dataset
+## Run the full DVC data pipeline (download -> preprocess -> split)
 .PHONY: data
-data: requirements
-	$(PYTHON_INTERPRETER) mlops_vera/dataset.py
+data:
+	uv run dvc repro
+
+## Run tests
+.PHONY: test
+test:
+	uv run pytest tests
 
 
 #################################################################################

@@ -16,11 +16,16 @@ classifiers = [
     
 ]
 dependencies = [
+    "dvc>=3.67.1",
+    "huggingface-hub>=2.0.0",
     "loguru",
     "numpy>=2.5.3",
     "pandas>=3.0.6",
+    "pillow>=12.3.0",
     "pip",
+    "pyarrow>=25.0.1",
     "python-dotenv",
+    "pyyaml>=6.0.3",
     "ruff",
     "tqdm",
     "typer",

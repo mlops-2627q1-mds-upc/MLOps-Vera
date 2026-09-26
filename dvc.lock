@@ -1,0 +1,76 @@
+schema: '2.0'
+stages:
+  download:
+    cmd: python -m mlops_vera.dataset
+    deps:
+    - path: mlops_vera/dataset.py
+      hash: md5
+      md5: dc62d5ddc0acd17e5b260684533a6694
+      size: 5307
+    params:
+      params.yaml:
+        data:
+          data:
+          repo_id: Rajarshi-Roy-research/Defactify_Image_Dataset
+          revision: 787334f7857fa54f29027a7f09c30e895ad486ef
+          n_captions: 800
+          complete_only: true
+          seed: 42
+    outs:
+    - path: data/raw/defactify
+      hash: md5
+      md5: 0ae7bdd3d32154856d0562ea1eb554a5.dir
+      size: 609772333
+      nfiles: 7736
+  preprocess:
+    cmd: python -m mlops_vera.features
+    deps:
+    - path: data/raw/defactify
+      hash: md5
+      md5: 0ae7bdd3d32154856d0562ea1eb554a5.dir
+      size: 609772333
+      nfiles: 7736
+    - path: mlops_vera/features.py
+      hash: md5
+      md5: f8f952ff0c2cabc072ff4d1a4df50506
+      size: 1901
+    params:
+      params.yaml:
+        preprocess:
+          img_size: 224
+          jpeg_quality: 90
+    outs:
+    - path: data/processed/defactify_224
+      hash: md5
+      md5: 67f99c4b31dcf1f9701d4937ef738fa2.dir
+      size: 131333034
+      nfiles: 7735
+  split:
+    cmd: python -m mlops_vera.split
+    deps:
+    - path: data/processed/defactify_224
+      hash: md5
+      md5: 67f99c4b31dcf1f9701d4937ef738fa2.dir
+      size: 131333034
+      nfiles: 7735
+    - path: mlops_vera/split.py
+      hash: md5
+      md5: a159911f94b9528477dbac09985ff36c
+      size: 2431
+    params:
+      params.yaml:
+        split:
+          train: 0.7
+          val: 0.15
+          test: 0.15
+          seed: 42
+    outs:
+    - path: data/processed/splits
+      hash: md5
+      md5: 8bad3768d2b93548d1289f125fb9f9fd.dir
+      size: 1082459
+      nfiles: 3
+    - path: reports/metrics/split_summary.json
+      hash: md5
+      md5: 9babb4b78fe600f21c3389f542307262
+      size: 314
