@@ -1,0 +1,24 @@
+# Pipeline parameters — tracked by DVC (`dvc params diff` shows changes between commits).
+
+data:
+  data:
+  repo_id: Rajarshi-Roy-research/Defactify_Image_Dataset
+  # Pin to a commit sha for full reproducibility (printed in data/raw/defactify/source.json).
+  revision: 787334f7857fa54f29027a7f09c30e895ad486ef
+  # Number of captions to sample. Each caption group has ~12 images (~2 real + ~10 AI).
+  n_captions: 800
+  # Keep only captions that have all 6 siblings (real + 5 generators): preserves the
+  # content-controlled pairing and the 5:1 ratio of the original dataset.
+  complete_only: true
+  seed: 42
+
+preprocess:
+  img_size: 224       # centre-crop to square, then resize (removes aspect-ratio shortcut)
+  jpeg_quality: 90    # uniform re-encoding (removes format/compression shortcut)
+
+split:
+  # Caption-grouped: all siblings of a caption land in the same split (no leakage).
+  train: 0.70
+  val: 0.15
+  test: 0.15
+  seed: 42
