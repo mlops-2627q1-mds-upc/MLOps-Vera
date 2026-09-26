@@ -1,0 +1,20 @@
+{
+  "train": {
+    "n_images": 5352,
+    "n_captions": 560,
+    "n_real": 892,
+    "n_ai": 4460
+  },
+  "val": {
+    "n_images": 1254,
+    "n_captions": 120,
+    "n_real": 209,
+    "n_ai": 1045
+  },
+  "test": {
+    "n_images": 1128,
+    "n_captions": 120,
+    "n_real": 188,
+    "n_ai": 940
+  }
+}

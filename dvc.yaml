@@ -1,0 +1,32 @@
+stages:
+  download:
+    cmd: python -m mlops_vera.dataset
+    deps:
+      - mlops_vera/dataset.py
+    params:
+      - data
+    outs:
+      - data/raw/defactify
+
+  preprocess:
+    cmd: python -m mlops_vera.features
+    deps:
+      - mlops_vera/features.py
+      - data/raw/defactify
+    params:
+      - preprocess
+    outs:
+      - data/processed/defactify_224
+
+  split:
+    cmd: python -m mlops_vera.split
+    deps:
+      - mlops_vera/split.py
+      - data/processed/defactify_224
+    params:
+      - split
+    outs:
+      - data/processed/splits
+    metrics:
+      - reports/metrics/split_summary.json:
+          cache: false
