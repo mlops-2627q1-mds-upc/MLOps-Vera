@@ -76,6 +76,7 @@ def test_main_trains_and_logs_to_mlflow(tmp_path, monkeypatch):
     assert bundle["backbone"] == "toy" and bundle["threshold"] == metrics["threshold"]
 
     run = mlflow.search_runs(experiment_names=["test"], output_format="list")[0]
+    assert run.info.run_name == "toy-logreg-balanced"
     assert run.data.params["train.class_weight"] == "balanced"
     assert run.data.metrics["val_balanced_accuracy"] == metrics["val"]["balanced_accuracy"]
     artifacts = {a.path for a in mlflow.MlflowClient().list_artifacts(run.info.run_id)}
