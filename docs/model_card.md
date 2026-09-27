@@ -22,13 +22,13 @@ metrics:
 > Team **Vera** — *Machine Learning Systems in Production (MLOps)*, UPC 2026–2027.
 > Structure follows Mitchell et al. (2019), *Model Cards for Model Reporting*.
 >
-> **Status:** The model is **not yet trained** — quantitative results are completed in Milestones 2–3. This card states the intended design and how it will be evaluated.
+> **Status:** Milestone 2 baseline selected (v0.1). Results below are on the **validation** split; the held-out test evaluation and the leave-one-generator-out study are completed in Milestone 3.
 
 ## Model details
 
 - **Developed by:** Team Vera.
-- **Model date / version:** 2026; v0.1 (planned).
-- **Model type:** binary image classifier (real vs AI-generated) built by **transfer learning** —  Final architecture and hyper-parameters are fixed in Milestone 2.
+- **Model date / version:** September 2026; v0.1 (Milestone 2 baseline).
+- **Model type:** binary image classifier (real vs AI-generated) built by **transfer learning**: the image encoder of **CLIP ViT-B/32** (OpenAI weights, via open_clip), used **frozen**, maps each 224×224 image to a 512-d embedding; a **standardisation + logistic-regression** head (L2, C = 1.0, no class weights) outputs P(AI). The image is flagged as AI when P(AI) ≥ 0.992, a threshold tuned on validation to maximise balanced accuracy. Chosen among six tracked baselines (ResNet-18, ResNet-50 and CLIP ViT-B/32, each with and without class weighting); hyper-parameters live in `params.yaml` and every run is logged to MLflow (DagsHub).
 - **Training data:** [Defactify / MS-COCOAI](https://huggingface.co/datasets/Rajarshi-Roy-research/Defactify_Image_Dataset) (easily configurable to other datasets) (see the [dataset card](dataset_card.md)).
 - **Licence:** code under the repository licence; training data under CC BY 4.0.
 - **Questions / comments:** Team Vera (see report cover).
@@ -49,15 +49,27 @@ Balanced accuracy, macro-F1, PR-AUC, and recall on the minority (real) class; th
 
 ## Evaluation data
 
-The Defactify **test** split (we may re-split with better distributions), re-split by caption to be leakage-free. Preprocessing: centre-crop/resize to a fixed square and uniform re-encoding, so shape and format cannot leak the label.
+Caption-grouped validation split (1,254 images from 120 captions: 209 real, 1,045 AI) for model selection and threshold tuning, and a held-out test split (1,128 images, 120 captions) for the final evaluation. No caption is shared between splits. Preprocessing: centre-crop/resize to a fixed square and uniform re-encoding, so shape and format cannot leak the label.
 
 ## Training data
 
-The Defactify **train** split (same preprocessing). Class imbalance (~5:1 fake:real) is handled via class weights or generator-stratified balanced sampling.
+A caption-grouped subsample of Defactify (800 captions with all six sources; 5,352 training images from 560 captions: 892 real, 4,460 AI), same preprocessing. The ~5:1 fake:real imbalance is handled by tuning the decision threshold on validation; class weighting was also tried and made no significant difference (see below).
 
 ## Quantitative analyses
 
-*To be completed in Milestones 2–3:* overall metrics on the leakage-free test set and per-generator (unitary) results, including the leave-one-generator-out drift experiment.
+Validation results of the selected model (test-set results follow in Milestone 3):
+
+| Metric | Value | Target |
+| --- | --- | --- |
+| Balanced accuracy | 0.916 | ≥ 0.85 ✅ |
+| Macro-F1 | 0.845 | ≥ 0.85 (just below) |
+| Recall (real) | 0.943 | ≥ 0.80 ✅ |
+| PR-AUC (real) | 0.898 | ≥ 0.90 (just below) |
+| ROC-AUC | 0.971 | — |
+
+Recall per generator (share of its images flagged as AI): SD 2.1 0.856, SDXL 0.952, **SD 3 0.789**, DALL·E 3 0.943, MidJourney 0.904. SD 3 is the hardest generator for every backbone tried.
+
+Compared with the ResNet baselines (validation balanced accuracy 0.80–0.82), the CLIP encoder is about 10 points better and overfits less (train/val balanced accuracy 0.96/0.92 vs 0.96/0.82 for ResNet-50). The leave-one-generator-out drift experiment (cross-generator target ≥ 0.70) is pending.
 
 ## Ethical considerations
 

@@ -44,7 +44,7 @@ Based on [Cookiecutter Data Science](https://cookiecutter-data-science.drivendat
 │   ├── features.py        #   stage `preprocess`
 │   ├── split.py           #   stage `split`
 │   └── modeling/          #   stages `embed`, `train`; inference
-├── models/                # Trained models (DVC)
+├── models/                # Trained classifier (stage `train`, DVC)
 ├── notebooks/             # Exploratory data analysis
 ├── reports/               # LaTeX report, milestone write-ups, metrics/ (DVC metrics)
 ├── tests/                 # Pytest suite (offline)
@@ -65,6 +65,52 @@ cp .env.example .env   # then fill in your DagsHub username and access token
 
 `.env` is git-ignored and loaded automatically by `mlops_vera/config.py`. Without it, runs are
 logged locally to `./mlflow.db` (browse them with `uv run mlflow ui`).
+
+### Running experiments
+
+The `embed` stage extracts features with a frozen pretrained backbone; `train` fits a
+logistic-regression head on them and logs the run to MLflow (experiment `vera-baselines`). An
+experiment is a variation of `params.yaml`, run with DVC so that code, params, data and metrics
+stay linked:
+
+```bash
+# Backbones: any torchvision classifier (resnet18, resnet50, ...) or clip_vit_b_32
+uv run dvc exp run -n resnet50-balanced -S embed.backbone=resnet50 -S train.class_weight=balanced
+
+uv run dvc exp show -A                 # compare experiments (params + metrics) in the terminal
+uv run dvc exp apply resnet50-balanced # restore one into the workspace
+uv run dvc exp push origin <name>      # share it; others get it with `dvc exp pull origin`
+```
+
+`embed` only re-runs when the backbone changes, so trying other head settings is cheap.
+
+Each MLflow run, named `<backbone>-logreg-<balanced|unweighted>`, records:
+
+- **Params:** the `embed` and `train` sections of `params.yaml`.
+- **Metrics** (train and val): balanced accuracy, macro-F1, ROC-AUC, PR-AUC and recall of the
+  real class, recall of the AI class and of each generator, and the decision threshold (tuned
+  on validation).
+- **Tags** linking it to its exact inputs: dataset revision, DVC hash of the embeddings and
+  backbone weights (MLflow adds the Git commit).
+- **Artifacts:** validation confusion matrix and PR curve, and the fitted model.
+
+The test split is not used by `train`; it is kept for the final evaluation.
+
+### Baseline results
+
+Six baselines (3 backbones × with/without class weighting); validation split:
+
+| Backbone | `class_weight` | Balanced acc. | Macro-F1 | PR-AUC (real) | Recall (real) |
+| --- | --- | --- | --- | --- | --- |
+| **CLIP ViT-B/32** | **none** | **0.916** | **0.845** | **0.898** | 0.943 |
+| CLIP ViT-B/32 | balanced | 0.911 | 0.829 | 0.896 | 0.952 |
+| ResNet-50 | none | 0.821 | 0.717 | 0.582 | 0.871 |
+| ResNet-50 | balanced | 0.816 | 0.712 | 0.563 | 0.866 |
+| ResNet-18 | none | 0.811 | 0.686 | 0.660 | 0.904 |
+| ResNet-18 | balanced | 0.803 | 0.690 | 0.653 | 0.871 |
+
+CLIP ViT-B/32 without class weights is the selected model (current `params.yaml`). See the
+[model card](docs/model_card.md) and the report for the analysis.
 
 ## Team
 
