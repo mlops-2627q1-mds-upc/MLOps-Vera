@@ -23,14 +23,15 @@ split:
   seed: 42
 
 embed:
-  # ImageNet-pretrained torchvision backbone, used frozen as a feature extractor
-  # (transfer learning; cheap enough to run on CPU for our subsample).
+  # Pretrained backbone, used frozen as a feature extractor (transfer learning; cheap enough
+  # to run on CPU for our subsample): any torchvision classifier (resnet18, resnet50, ...) or
+  # a CLIP image encoder (clip_vit_b_32).
   backbone: resnet18
   batch_size: 64
 
 train:
   # Logistic-regression head fitted on the frozen embeddings.
   C: 1.0                  # inverse L2 regularisation strength
-  class_weight: balanced  # counters the 5:1 fake:real imbalance
+  class_weight:           # counters the 5:1 fake:real imbalance
   max_iter: 1000
   seed: 42
