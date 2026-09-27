@@ -83,14 +83,13 @@ stages:
       nfiles: 7735
     - path: data/processed/splits
       hash: md5
-      md5: 8bad3768d2b93548d1289f125fb9f9fd.dir
-      size: 1082459
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
       nfiles: 3
     - path: mlops_vera/modeling/embed.py
       hash: md5
-      md5: 0cc5ed4e079656f5c52dcad262a1ac9b
-      size: 4475
-      isexec: true
+      md5: e981dc978338fb127db6cdae045f18ae
+      size: 5769
     params:
       params.yaml:
         embed:
@@ -112,24 +111,21 @@ stages:
       nfiles: 4
     - path: mlops_vera/modeling/train.py
       hash: md5
-      md5: 3574d01c83cf64ee2bcf6e6bc25acb49
-      size: 7372
-      isexec: true
+      md5: e42e0019ac5e37a48cd07a7c77e22b0b
+      size: 7478
     params:
       params.yaml:
         train:
           C: 1.0
-          class_weight: balanced
+          class_weight:
           max_iter: 1000
           seed: 42
     outs:
     - path: models/classifier.joblib
       hash: md5
-      md5: 02c8ae09f313641d31a9f74586c1790c
-      size: 15785
-      isexec: true
+      md5: 197caac0ae2db04529fea65a819db99a
+      size: 15769
     - path: reports/metrics/train_metrics.json
       hash: md5
-      md5: 71896efdee785b978aa24109cfd5daae
+      md5: 5b3421b3aecb497675341b36918104ae
       size: 933
-      isexec: true

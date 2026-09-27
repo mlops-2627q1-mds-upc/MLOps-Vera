@@ -32,6 +32,6 @@ embed:
 train:
   # Logistic-regression head fitted on the frozen embeddings.
   C: 1.0                  # inverse L2 regularisation strength
-  class_weight: balanced  # counters the 5:1 fake:real imbalance
+  class_weight:           # counters the 5:1 fake:real imbalance
   max_iter: 1000
   seed: 42
