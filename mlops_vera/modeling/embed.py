@@ -115,7 +115,7 @@ def main(
         info["n_images"][split] = len(meta)
     info["dim"] = int(X.shape[1])
 
-    (output_dir / "info.json").write_text(json.dumps(info, indent=2))
+    (output_dir / "info.json").write_text(json.dumps(info, indent=2), newline="\n")
     logger.success(f"Embeddings ({info['dim']}-d) written to {output_dir}: {info['n_images']}")
 
 

@@ -150,7 +150,7 @@ def main(
     bundle = {"model": model, "threshold": threshold, "backbone": info["backbone"]}
     joblib.dump(bundle, model_path)
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
-    metrics_path.write_text(json.dumps(metrics, indent=2))
+    metrics_path.write_text(json.dumps(metrics, indent=2), newline="\n")
 
     mlflow.set_experiment(experiment)
     with mlflow.start_run(run_name=f"{info['backbone']}-logreg") as run:

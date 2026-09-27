@@ -56,15 +56,17 @@ def main(input_dir: Path = PREPROCESSED_DIR, output_dir: Path = SPLITS_DIR):
     leaks = meta.groupby("caption")["split"].nunique().gt(1).sum()
     assert leaks == 0, f"{leaks} captions leak across splits"
 
+    # Force LF line endings: on Windows they default to CRLF, which changes the DVC hashes and
+    # makes the same outputs look modified on Linux.
     output_dir.mkdir(parents=True, exist_ok=True)
     for name in SPLITS:
         meta[meta["split"] == name].drop(columns="split").to_csv(
-            output_dir / f"{name}.csv", index=False
+            output_dir / f"{name}.csv", index=False, lineterminator="\n"
         )
 
     METRICS_DIR.mkdir(parents=True, exist_ok=True)
     summary = summarise(meta)
-    (METRICS_DIR / "split_summary.json").write_text(json.dumps(summary, indent=2))
+    (METRICS_DIR / "split_summary.json").write_text(json.dumps(summary, indent=2), newline="\n")
     logger.success(f"Splits written to {output_dir}: {summary}")
 
 
