@@ -93,21 +93,21 @@ stages:
     params:
       params.yaml:
         embed:
-          backbone: resnet18
+          backbone: resnet50
           batch_size: 64
     outs:
     - path: data/processed/embeddings
       hash: md5
-      md5: 0e65f112007c6aada25eeb0ac1e08318.dir
-      size: 16956055
+      md5: e8398a37def1cb991f07d6dd374bc001.dir
+      size: 64473752
       nfiles: 4
   train:
     cmd: python -m mlops_vera.modeling.train
     deps:
     - path: data/processed/embeddings
       hash: md5
-      md5: 0e65f112007c6aada25eeb0ac1e08318.dir
-      size: 16956055
+      md5: e8398a37def1cb991f07d6dd374bc001.dir
+      size: 64473752
       nfiles: 4
     - path: mlops_vera/modeling/train.py
       hash: md5
@@ -123,9 +123,9 @@ stages:
     outs:
     - path: models/classifier.joblib
       hash: md5
-      md5: 02c8ae09f313641d31a9f74586c1790c
-      size: 15785
+      md5: 87423b0d049d00aeec0c2e433a3ceb03
+      size: 58793
     - path: reports/metrics/train_metrics.json
       hash: md5
-      md5: 71896efdee785b978aa24109cfd5daae
-      size: 933
+      md5: 23dff30ab3afe1578501c113968c344d
+      size: 886
