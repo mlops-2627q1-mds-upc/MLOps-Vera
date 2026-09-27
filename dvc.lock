@@ -73,3 +73,32 @@ stages:
       hash: md5
       md5: 9babb4b78fe600f21c3389f542307262
       size: 314
+  embed:
+    cmd: python -m mlops_vera.modeling.embed
+    deps:
+    - path: data/processed/defactify_224
+      hash: md5
+      md5: 67f99c4b31dcf1f9701d4937ef738fa2.dir
+      size: 131333034
+      nfiles: 7735
+    - path: data/processed/splits
+      hash: md5
+      md5: 8bad3768d2b93548d1289f125fb9f9fd.dir
+      size: 1082459
+      nfiles: 3
+    - path: mlops_vera/modeling/embed.py
+      hash: md5
+      md5: 0cc5ed4e079656f5c52dcad262a1ac9b
+      size: 4475
+      isexec: true
+    params:
+      params.yaml:
+        embed:
+          backbone: resnet18
+          batch_size: 64
+    outs:
+    - path: data/processed/embeddings
+      hash: md5
+      md5: 0e65f112007c6aada25eeb0ac1e08318.dir
+      size: 16956055
+      nfiles: 4

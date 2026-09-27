@@ -26,6 +26,34 @@ We initially scoped the project around **CIFAKE**, then switched to Defactify af
 
 > The course is graded on MLOps engineering rather than raw accuracy, so we prioritised a clean, well-licensed, right-sized dataset that we can reproducibly build, deploy, and monitor.
 
+## Project structure
+
+Based on [Cookiecutter Data Science](https://cookiecutter-data-science.drivendata.org/).
+
+```
+├── data/                  # Versioned with DVC (not Git)
+│   ├── raw/defactify/     #   untouched images + metadata (stage `download`)
+│   └── processed/
+│       ├── defactify_224/ #   cropped, resized, re-encoded images (stage `preprocess`)
+│       ├── splits/        #   caption-grouped train/val/test CSVs (stage `split`)
+│       └── embeddings/    #   frozen-backbone features per split (stage `embed`)
+├── docs/                  # Dataset card and model card
+├── mlops_vera/            # Python package
+│   ├── config.py          #   paths and params.yaml loader
+│   ├── dataset.py         #   stage `download`
+│   ├── features.py        #   stage `preprocess`
+│   ├── split.py           #   stage `split`
+│   └── modeling/          #   stages `embed`, `train`; inference
+├── models/                # Trained models (DVC)
+├── notebooks/             # Exploratory data analysis
+├── reports/               # LaTeX report, milestone write-ups, metrics/ (DVC metrics)
+├── tests/                 # Pytest suite (offline)
+├── dvc.yaml / dvc.lock    # Pipeline definition and its locked state
+├── params.yaml            # Pipeline hyper-parameters
+├── pyproject.toml / uv.lock
+└── Makefile               # make requirements | data | train | test | lint
+```
+
 ## Experiment tracking (MLflow)
 
 Training runs are logged with **MLflow** to the tracking server hosted by DagsHub:
