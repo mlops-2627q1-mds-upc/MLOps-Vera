@@ -10,7 +10,6 @@ stages:
     params:
       params.yaml:
         data:
-          data:
           repo_id: Rajarshi-Roy-research/Defactify_Image_Dataset
           revision: 787334f7857fa54f29027a7f09c30e895ad486ef
           n_captions: 800

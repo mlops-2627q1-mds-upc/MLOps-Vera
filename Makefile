@@ -58,10 +58,15 @@ create_environment:
 #################################################################################
 
 
-## Run the full DVC data pipeline (download -> preprocess -> split)
+## Run the DVC data pipeline (download -> preprocess -> split)
 .PHONY: data
 data:
-	uv run dvc repro
+	uv run dvc repro split
+
+## Run the DVC pipeline up to the trained model (... -> embed -> train)
+.PHONY: train
+train:
+	uv run dvc repro train
 
 ## Run tests
 .PHONY: test
