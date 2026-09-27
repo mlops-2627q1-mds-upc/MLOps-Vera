@@ -153,7 +153,8 @@ def main(
     metrics_path.write_text(json.dumps(metrics, indent=2), newline="\n")
 
     mlflow.set_experiment(experiment)
-    with mlflow.start_run(run_name=f"{info['backbone']}-logreg") as run:
+    weighting = "balanced" if p["class_weight"] == "balanced" else "unweighted"
+    with mlflow.start_run(run_name=f"{info['backbone']}-logreg-{weighting}") as run:
         mlflow.log_params({f"embed.{k}": v for k, v in p_embed.items()})
         mlflow.log_params({f"train.{k}": v for k, v in p.items()})
         mlflow.set_tags(

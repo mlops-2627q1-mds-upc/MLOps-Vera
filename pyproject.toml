@@ -23,6 +23,7 @@ dependencies = [
     "matplotlib>=3.11.2",
     "mlflow>=3.16.1",
     "numpy>=2.5.3",
+    "open-clip-torch>=3.3.0",
     "pandas>=3.0.6",
     "pillow>=12.3.0",
     "pip",
