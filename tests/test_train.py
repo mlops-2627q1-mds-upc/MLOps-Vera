@@ -10,6 +10,8 @@ import mlflow
 import numpy as np
 import pytest
 
+from mlops_vera.config import load_params
+from mlops_vera.modeling import train
 from mlops_vera.modeling.train import evaluate, main, tune_threshold
 
 
@@ -53,7 +55,15 @@ def test_evaluate_reports_model_card_metrics():
     assert all(isinstance(v, float) for v in m.values())
 
 
-def test_main_trains_and_logs_to_mlflow(tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    ("class_weight", "run_name"),
+    [("balanced", "toy-logreg-balanced"), (None, "toy-logreg-unweighted")],
+)
+def test_main_trains_and_logs_to_mlflow(tmp_path, monkeypatch, class_weight, run_name):
+    # Pin the head's class weighting so the test doesn't depend on the value chosen in params.yaml
+    params = load_params()
+    params["train"]["class_weight"] = class_weight
+    monkeypatch.setattr(train, "load_params", lambda section: params[section])
     monkeypatch.setenv("MLFLOW_TRACKING_URI", f"sqlite:///{tmp_path / 'mlflow.db'}")
     rng = np.random.default_rng(0)
     emb = tmp_path / "embeddings"
@@ -76,8 +86,8 @@ def test_main_trains_and_logs_to_mlflow(tmp_path, monkeypatch):
     assert bundle["backbone"] == "toy" and bundle["threshold"] == metrics["threshold"]
 
     run = mlflow.search_runs(experiment_names=["test"], output_format="list")[0]
-    assert run.info.run_name == "toy-logreg-balanced"
-    assert run.data.params["train.class_weight"] == "balanced"
+    assert run.info.run_name == run_name
+    assert run.data.params["train.class_weight"] == str(class_weight)
     assert run.data.metrics["val_balanced_accuracy"] == metrics["val"]["balanced_accuracy"]
     artifacts = {a.path for a in mlflow.MlflowClient().list_artifacts(run.info.run_id)}
     assert {"val_confusion_matrix.png", "val_pr_curve.png"} <= artifacts
