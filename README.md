@@ -26,6 +26,18 @@ We initially scoped the project around **CIFAKE**, then switched to Defactify af
 
 > The course is graded on MLOps engineering rather than raw accuracy, so we prioritised a clean, well-licensed, right-sized dataset that we can reproducibly build, deploy, and monitor.
 
+## Experiment tracking (MLflow)
+
+Training runs are logged with **MLflow** to the tracking server hosted by DagsHub:
+<https://dagshub.com/AdriSegurao/MLOps-Vera.mlflow>.
+
+```bash
+cp .env.example .env   # then fill in your DagsHub username and access token
+```
+
+`.env` is git-ignored and loaded automatically by `mlops_vera/config.py`. Without it, runs are
+logged locally to `./mlflow.db` (browse them with `uv run mlflow ui`).
+
 ## Team
 
 | Member | GitHub |

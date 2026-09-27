@@ -42,6 +42,7 @@ htmlcov/
 # ---- MLOps tooling ----
 mlruns/
 mlartifacts/
+mlflow.db
 /.dvc/cache/
 /.dvc/tmp/
 .codecarbon/
