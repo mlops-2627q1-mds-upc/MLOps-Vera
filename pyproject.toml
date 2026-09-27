@@ -20,6 +20,7 @@ dependencies = [
     "huggingface-hub>=2.0.0",
     "joblib>=1.6.0",
     "loguru",
+    "matplotlib>=3.11.2",
     "mlflow>=3.16.1",
     "numpy>=2.5.3",
     "pandas>=3.0.6",
