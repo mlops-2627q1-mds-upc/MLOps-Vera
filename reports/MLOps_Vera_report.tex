@@ -371,10 +371,48 @@ We select \textbf{Virtech}, the FIB's private cloud (based on OpenNebula), which
 \guideline{Describe how the different software engineering practices and tools have been applied.}
 
 \subsubsection{Project structure}
-\guideline{(e.g., Cookiecutter)}
+
+The repository follows the \textbf{Cookiecutter Data Science} template (v2, generated with \texttt{ccds} for the package \texttt{mlops\_vera}), applied to our existing repository so that the exploration notebook, the cards and the reports kept their history. Table~\ref{tab:structure} summarises the layout.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Repository layout.}
+\label{tab:structure}
+\begin{tabularx}{\textwidth}{@{}l Y@{}}
+\toprule
+\textbf{Path} & \textbf{Contents} \\
+\midrule
+\texttt{data/} & \texttt{raw}, \texttt{interim}, \texttt{processed} and \texttt{external} data, versioned with DVC and never with Git \\
+\texttt{mlops\_vera/} & Python package with one module per pipeline stage: \texttt{dataset.py} (download), \texttt{features.py} (preprocessing), \texttt{split.py} (caption-grouped split) and \texttt{modeling/} (training and inference). \texttt{config.py} holds all paths and loads \texttt{params.yaml}. \\
+\texttt{models/} & Trained models, produced by the pipeline and versioned with DVC \\
+\texttt{notebooks/} & Exploratory data analysis \\
+\texttt{docs/} & Dataset card and model card \\
+\texttt{reports/} & This report, the milestone write-ups and \texttt{metrics/} (DVC metrics) \\
+\texttt{references/} & Background material \\
+\texttt{tests/} & Pytest suite \\
+Root files & \texttt{pyproject.toml} and \texttt{uv.lock} (environment); \texttt{dvc.yaml}, \texttt{dvc.lock} and \texttt{params.yaml} (pipeline); \texttt{Makefile}, \texttt{README.md} and \texttt{CONTRIBUTING.md} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The environment is managed with \textbf{uv}, as in the course setup guide. Python~3.12 and the dependencies are declared in \texttt{pyproject.toml}, the exact versions are locked in \texttt{uv.lock} (committed), and the development tools (Black, Pylint, Pytest) are kept in a separate \texttt{dev} group, so \texttt{uv sync} rebuilds the same environment on any machine. The \texttt{Makefile} wraps the common tasks (\texttt{make data}, \texttt{make test}, \texttt{make lint}).
+
+The structure keeps code, data, models and documentation apart, and since every stage reads its paths from \texttt{config.py} and its hyper-parameters from \texttt{params.yaml}, a stage can be changed or re-run without touching the others. We adapted the template where the project needed it: \texttt{docs/} holds the cards, the empty \texttt{reports/figures/} folder was removed because the report images live in \texttt{reports/images/}, and a \texttt{split.py} module and a \texttt{reports/metrics/} folder were added for the split stage and the DVC metrics.
 
 \subsubsection{Code versioning}
-\guideline{(e.g., GitHub Flow)}
+\label{sec:code-versioning}
+
+The code is versioned with Git in a public repository of the course organisation on GitHub, following \textbf{GitHub Flow}: \texttt{main} is always deployable, and every change is developed in its own branch and merged through a reviewed pull request. The main rules, documented in \texttt{CONTRIBUTING.md}, are:
+
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \textbf{Branches:} one branch per Jira story, named \texttt{<type>/<Jira key>-<description>}, e.g.\ \texttt{feat/KAN-12-mlflow-tracking}.
+  \item \textbf{Commits:} small, related changes, with messages following \emph{Conventional Commits}~1.0.0 (\texttt{type(scope): description}), a body that explains what changed and why, and a \texttt{Refs: KAN-n} footer.
+  \item \textbf{Pull requests:} titled like a commit or with the Jira key and the story summary, and filled in from a template (why, what is changing, how to test, and a checklist covering tests, credentials, data and documentation). A pull request needs the approval of another member before it can be merged.
+  \item \textbf{History:} published history is never rewritten (no force pushes); conflicts are solved by merging \texttt{main} into the branch.
+\end{itemize}
+
+To minimise mistakes, GitHub enforces these rules instead of relying on discipline. \texttt{main} is protected: it only accepts changes through a pull request with one approval, also from administrators, and cannot be force-pushed or deleted. Pull requests are merged with a merge commit, so each member's commits stay in \texttt{main}, and merged branches are deleted automatically. Secret scanning with push protection blocks pushes that contain recognised credential formats; credentials are only kept in git-ignored local files (\texttt{.dvc/config.local}, \texttt{.env}), and \texttt{.gitignore} also excludes data, caches and local environments.
 
 \subsubsection{Data versioning}
 \guideline{(e.g., DVC)}
