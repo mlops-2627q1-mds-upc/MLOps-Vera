@@ -80,7 +80,9 @@ Refs: KAN-18
 
 ## Pull requests
 
-- Use the same format for the title, for example `feat(model): add baseline training stage`.
+- Write the title in one of two styles:
+  - the commit message format, for example `feat(model): add baseline training stage`;
+  - the Jira key followed by the ticket summary, for example `KAN-12: Set up MLflow and track first experiments`.
 - Fill in the template: why, what is changing, how to test.
 - Ask at least one teammate for a review, and do not merge a pull request without an approval.
 - Keep each pull request small and focused on one ticket.
