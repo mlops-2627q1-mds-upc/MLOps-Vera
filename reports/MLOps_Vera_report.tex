@@ -320,10 +320,51 @@ The project runs on general-purpose laptops and free-tier cloud, so we favour tr
 \newpage
 
 \subsubsection{Project coordination and communication}
-\guideline{What tools have been selected, why, and how are they used?}
+
+We coordinate the work with four tools, chosen so that every task, discussion and change leaves a trace that the whole team, and the teaching staff, can follow (Table~\ref{tab:coordination}).
+
+\begin{table}[h]
+\centering
+\small
+\caption{Coordination and communication tools.}
+\label{tab:coordination}
+\begin{tabularx}{\textwidth}{@{}l Y Y@{}}
+\toprule
+\textbf{Tool} & \textbf{Why} & \textbf{How we use it} \\
+\midrule
+Jira (board \texttt{KAN}) & Shared backlog with assignees and statuses; its issue keys can be referenced from Git & One story per deliverable of each milestone, assigned to one member and moved through \emph{To Do} $\rightarrow$ \emph{In Progress} $\rightarrow$ \emph{In Review} $\rightarrow$ \emph{Done}. When a story is closed, a comment summarises the work and links its pull requests. \\
+GitHub & Required by the course; pull requests keep reviews and discussions next to the code & Every change goes through a pull request that references its Jira story and is reviewed by a teammate (Section~\ref{sec:code-versioning}). \\
+Discord & The team's chat for messages and calls & Day-to-day coordination: announcing pull requests, asking for reviews, agreeing on decisions and splitting tasks. \\
+DagsHub & Recommended by the course guides for DVC and MLflow & Shared remote for the versioned data and models, and the MLflow tracking server. Each member accesses it with a personal token. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The Jira board was created on 22 September with the stories of Milestones 1--3. The Jira key ties the tools together: it appears in the branch name, in the pull request description and, by convention, in the commit footers (\texttt{Refs: KAN-12}), so every change can be followed from its story to the code and back. Each member's contribution is visible in the assignees of the board and in the authors of the commits and pull requests on GitHub.
 
 \subsubsection{Selection of the cloud provider}
-\guideline{Justification of the selection (to be used in Milestone 4).}
+
+In Milestone~4 the component is deployed as a REST API that only runs inference: a frozen CLIP ViT-B/32 image encoder (about 88M parameters, $\sim$350\,MB) and a logistic-regression head, on CPU. The host therefore needs around 2\,GB of RAM for the model, PyTorch and the API, plus room for the containers (Milestone~5) and the monitoring stack (Milestone~6); no GPU is needed. It must also stay available, free of charge, for the whole course. Table~\ref{tab:cloud} compares the free options described in the course deployment guide.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Free tiers of the providers considered (course deployment guide).}
+\label{tab:cloud}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Provider} & \textbf{Compute} & \textbf{RAM} & \textbf{Disk} & \textbf{Free for} \\
+\midrule
+\textbf{Virtech (FIB)} & unlimited & 4\,GB & 20\,GB & 1 semester \\
+Azure Virtual Machines & 750\,h/month & 1--4\,GB & 128\,GB & 12 months \\
+AWS EC2 & 750\,h/month & 1\,GB & 30\,GB & 12 months \\
+Google Compute Engine & 750\,h/month & 0.6\,GB & 30\,GB & 12 months + 300\,USD \\
+Okteto & unlimited & 3\,GB & 5\,GB & unlimited \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We select \textbf{Virtech}, the FIB's private cloud (based on OpenNebula), which provides one virtual machine per team. It offers the most memory among the free options, while the 1\,GB and 0.6\,GB instances of AWS and Google Cloud are too small for the model and PyTorch and Okteto's 5\,GB disk is tight for container images. It also has no usage limits during the semester, needs no credit card or personal cloud account, and is supported by the school and documented in the course deployment guide. Its main limitations are that the VM only lasts one semester and has no GPU; since the component will be containerised in Milestone~5, it can be moved to a public cloud such as Azure if needed.
 
 % ----- 2.2 Milestone 2 -----
 \subsection{Milestone 2: Model Building -- Reproducibility}
