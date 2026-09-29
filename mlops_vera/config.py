@@ -27,6 +27,8 @@ METRICS_DIR = REPORTS_DIR / "metrics"
 RAW_DEFACTIFY_DIR = RAW_DATA_DIR / "defactify"
 PREPROCESSED_DIR = PROCESSED_DATA_DIR / "defactify_224"
 SPLITS_DIR = PROCESSED_DATA_DIR / "splits"
+EMBEDDINGS_DIR = PROCESSED_DATA_DIR / "embeddings"
+CLASSIFIER_PATH = MODELS_DIR / "classifier.joblib"
 
 # Single source of truth for pipeline hyper-parameters (tracked by DVC)
 PARAMS_PATH = PROJ_ROOT / "params.yaml"

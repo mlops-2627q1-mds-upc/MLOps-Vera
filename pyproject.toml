@@ -18,8 +18,12 @@ classifiers = [
 dependencies = [
     "dvc>=3.67.1",
     "huggingface-hub>=2.0.0",
+    "joblib>=1.6.0",
     "loguru",
+    "matplotlib>=3.11.2",
+    "mlflow>=3.16.1",
     "numpy>=2.5.3",
+    "open-clip-torch>=3.3.0",
     "pandas>=3.0.6",
     "pillow>=12.3.0",
     "pip",
@@ -27,6 +31,9 @@ dependencies = [
     "python-dotenv",
     "pyyaml>=6.0.3",
     "ruff",
+    "scikit-learn>=1.9.1",
+    "torch>=2.14.0",
+    "torchvision>=0.29.0",
     "tqdm",
     "typer",
 ]
@@ -52,3 +59,13 @@ dev = [
     "pytest>=9.1.1",
 ]
 
+# CPU-only PyTorch wheels (the default Linux/Windows wheels bundle CUDA, ~2-3 GB).
+# macOS uses PyPI, whose wheels are already CPU/MPS.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform != 'darwin'" }]
+torchvision = [{ index = "pytorch-cpu", marker = "sys_platform != 'darwin'" }]
