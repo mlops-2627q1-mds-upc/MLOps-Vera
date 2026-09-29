@@ -12,7 +12,7 @@ import pytest
 
 from mlops_vera.config import load_params
 from mlops_vera.modeling import train
-from mlops_vera.modeling.train import evaluate, main, tune_threshold
+from mlops_vera.modeling.train import build_model, evaluate, main, tune_threshold, with_threshold
 
 
 def _synthetic_split(n_per_source: int, rng: np.random.Generator, dim: int = 8):
@@ -55,14 +55,25 @@ def test_evaluate_reports_model_card_metrics():
     assert all(isinstance(v, float) for v in m.values())
 
 
+def test_with_threshold_predicts_at_tuned_threshold():
+    rng = np.random.default_rng(0)
+    X, y, _ = _synthetic_split(20, rng)
+    model = build_model({"C": 1.0, "class_weight": None, "max_iter": 1000, "seed": 0}).fit(X, y)
+    scores = model.predict_proba(X)[:, 1]
+    threshold = float(np.quantile(scores, 0.5))  # far from 0.5, so the two decisions differ
+    classifier = with_threshold(model, threshold, X, y)
+    np.testing.assert_array_equal(classifier.predict(X), (scores >= threshold).astype(int))
+    np.testing.assert_array_equal(classifier.predict_proba(X), model.predict_proba(X))
+
+
 @pytest.mark.parametrize(
     ("class_weight", "run_name"),
-    [("balanced", "toy-logreg-balanced"), (None, "toy-logreg-unweighted")],
+    [("balanced", "toy-logreg-balanced-C0.5"), (None, "toy-logreg-unweighted-C0.5")],
 )
 def test_main_trains_and_logs_to_mlflow(tmp_path, monkeypatch, class_weight, run_name):
-    # Pin the head's class weighting so the test doesn't depend on the value chosen in params.yaml
+    # Pin the head's parameters so the test doesn't depend on the values chosen in params.yaml
     params = load_params()
-    params["train"]["class_weight"] = class_weight
+    params["train"].update(C=0.5, class_weight=class_weight)
     monkeypatch.setattr(train, "load_params", lambda section: params[section])
     monkeypatch.setenv("MLFLOW_TRACKING_URI", f"sqlite:///{tmp_path / 'mlflow.db'}")
     rng = np.random.default_rng(0)
@@ -91,3 +102,10 @@ def test_main_trains_and_logs_to_mlflow(tmp_path, monkeypatch, class_weight, run
     assert run.data.metrics["val_balanced_accuracy"] == metrics["val"]["balanced_accuracy"]
     artifacts = {a.path for a in mlflow.MlflowClient().list_artifacts(run.info.run_id)}
     assert {"val_confusion_matrix.png", "val_pr_curve.png"} <= artifacts
+
+    # The MLflow model classifies at the tuned threshold, exactly like the joblib bundle
+    X_val = np.load(emb / "val.npz")["X"]
+    logged = mlflow.sklearn.load_model(f"runs:/{run.info.run_id}/model")
+    expected = bundle["model"].predict_proba(X_val)[:, 1] >= bundle["threshold"]
+    np.testing.assert_array_equal(logged.predict(X_val), expected.astype(int))
+    np.testing.assert_array_equal(bundle["model"].predict(X_val), expected.astype(int))

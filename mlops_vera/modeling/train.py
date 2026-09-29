@@ -3,7 +3,8 @@
 - Model: standardisation + logistic regression, class-weighted against the 5:1 fake:real
   imbalance (hyper-parameters in the `train` section of params.yaml).
 - The decision threshold on P(AI) is tuned on validation to maximise balanced accuracy instead
-  of being fixed at 0.5, as the model card specifies.
+  of being fixed at 0.5, as the model card specifies. It is baked into the saved model, so its
+  `predict()` (joblib bundle and MLflow model alike) applies the tuned threshold.
 - Validation metrics follow the model card: balanced accuracy, macro-F1, PR-AUC and recall of
   the minority (real) class, plus the detection rate of each generator.
 - Params, metrics, plots and the model are logged to MLflow (DagsHub when `.env` is set, else
@@ -22,6 +23,7 @@ from matplotlib.figure import Figure
 import mlflow
 from mlflow.models import infer_signature
 import numpy as np
+from sklearn.frozen import FrozenEstimator
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
@@ -33,6 +35,7 @@ from sklearn.metrics import (
     roc_auc_score,
     roc_curve,
 )
+from sklearn.model_selection import FixedThresholdClassifier
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import StandardScaler
 import typer
@@ -75,6 +78,16 @@ def tune_threshold(y: np.ndarray, scores: np.ndarray) -> float:
     fpr, tpr, thresholds = roc_curve(y, scores)
     best = np.argmax((tpr - fpr)[1:]) + 1  # thresholds[0] is +inf (predicts nothing as AI)
     return float(thresholds[best])
+
+
+def with_threshold(
+    model: Pipeline, threshold: float, X: np.ndarray, y: np.ndarray
+) -> FixedThresholdClassifier:
+    """Wrap the fitted `model` so that predict() flags P(AI) >= `threshold` as AI (not 0.5)."""
+    # FrozenEstimator turns fit() into a no-op: (X, y) only set the classes, nothing is refit
+    return FixedThresholdClassifier(
+        FrozenEstimator(model), threshold=threshold, response_method="predict_proba"
+    ).fit(X, y)
 
 
 def evaluate(y: np.ndarray, generator: np.ndarray, scores: np.ndarray, threshold: float) -> dict:
@@ -143,18 +156,21 @@ def main(
         "val": evaluate(y_val, gen_val, scores_val, threshold),
     }
     logger.info(f"Validation metrics (threshold {threshold:.3f}): {metrics['val']}")
+    # Saved and logged instead of `model`, so every consumer classifies at the tuned threshold
+    classifier = with_threshold(model, threshold, X_train, y_train)
 
     # DVC outputs. The threshold and backbone travel with the model so serving can reproduce
     # the full image -> embedding -> decision path.
     model_path.parent.mkdir(parents=True, exist_ok=True)
-    bundle = {"model": model, "threshold": threshold, "backbone": info["backbone"]}
+    bundle = {"model": classifier, "threshold": threshold, "backbone": info["backbone"]}
     joblib.dump(bundle, model_path)
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
     metrics_path.write_text(json.dumps(metrics, indent=2), newline="\n")
 
     mlflow.set_experiment(experiment)
     weighting = "balanced" if p["class_weight"] == "balanced" else "unweighted"
-    with mlflow.start_run(run_name=f"{info['backbone']}-logreg-{weighting}") as run:
+    run_name = f"{info['backbone']}-logreg-{weighting}-C{p['C']:g}"
+    with mlflow.start_run(run_name=run_name) as run:
         mlflow.log_params({f"embed.{k}": v for k, v in p_embed.items()})
         mlflow.log_params({f"train.{k}": v for k, v in p.items()})
         mlflow.set_tags(
@@ -168,14 +184,14 @@ def main(
         for split in ("train", "val"):
             mlflow.log_metrics({f"{split}_{k}": v for k, v in metrics[split].items()})
 
-        pred_val = (scores_val >= threshold).astype(int)
+        pred_val = classifier.predict(X_val)
         mlflow.log_figure(plot_confusion_matrix(y_val, pred_val), "val_confusion_matrix.png")
         mlflow.log_figure(plot_pr_curve(y_val, scores_val), "val_pr_curve.png")
         mlflow.log_dict(info, "embeddings_info.json")
         mlflow.sklearn.log_model(
-            model,
+            classifier,
             name="model",
-            signature=infer_signature(X_val, model.predict(X_val)),
+            signature=infer_signature(X_val, pred_val),
             # Explicit requirements: MLflow's inference re-imports the model in a subprocess
             # and scans every installed package, which takes over a minute.
             pip_requirements=mlflow.sklearn.get_default_pip_requirements(include_skops=True),
