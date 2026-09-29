@@ -111,21 +111,21 @@ stages:
       nfiles: 4
     - path: mlops_vera/modeling/train.py
       hash: md5
-      md5: e42e0019ac5e37a48cd07a7c77e22b0b
-      size: 7478
+      md5: 3927673c05d9fe8b602a9c2ec9ac57f5
+      size: 8339
     params:
       params.yaml:
         train:
-          C: 1.0
-          class_weight:
+          C: 0.01
+          class_weight: balanced
           max_iter: 1000
           seed: 42
     outs:
     - path: models/classifier.joblib
       hash: md5
-      md5: 967d99a36d3ad0db7bd51b244509abea
-      size: 15774
+      md5: 9e232ba7a8e63d55d60402e1a7aeeb27
+      size: 16024
     - path: reports/metrics/train_metrics.json
       hash: md5
-      md5: ee703a5909711fcdc5c68c83539e0594
-      size: 920
+      md5: 70567dd84ceb507946078d701c0e18fe
+      size: 932

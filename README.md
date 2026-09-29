@@ -76,6 +76,7 @@ stay linked:
 ```bash
 # Backbones: any torchvision classifier (resnet18, resnet50, ...) or clip_vit_b_32
 uv run dvc exp run -n resnet50-balanced -S embed.backbone=resnet50 -S train.class_weight=balanced
+uv run dvc exp run -n clip-balanced-C0.1 -S train.C=0.1   # head regularisation
 
 uv run dvc exp show -A                 # compare experiments (params + metrics) in the terminal
 uv run dvc exp apply resnet50-balanced # restore one into the workspace
@@ -84,7 +85,7 @@ uv run dvc exp push origin <name>      # share it; others get it with `dvc exp p
 
 `embed` only re-runs when the backbone changes, so trying other head settings is cheap.
 
-Each MLflow run, named `<backbone>-logreg-<balanced|unweighted>`, records:
+Each MLflow run, named `<backbone>-logreg-<balanced|unweighted>-C<C>`, records:
 
 - **Params:** the `embed` and `train` sections of `params.yaml`.
 - **Metrics** (train and val): balanced accuracy, macro-F1, ROC-AUC, PR-AUC and recall of the
@@ -92,13 +93,14 @@ Each MLflow run, named `<backbone>-logreg-<balanced|unweighted>`, records:
   on validation).
 - **Tags** linking it to its exact inputs: dataset revision, DVC hash of the embeddings and
   backbone weights (MLflow adds the Git commit).
-- **Artifacts:** validation confusion matrix and PR curve, and the fitted model.
+- **Artifacts:** validation confusion matrix and PR curve, and the fitted model, whose
+  `predict()` applies the tuned threshold.
 
 The test split is not used by `train`; it is kept for the final evaluation.
 
 ### Baseline results
 
-Six baselines (3 backbones × with/without class weighting); validation split:
+Six baselines (3 backbones × with/without class weighting, C = 1); validation split:
 
 | Backbone | `class_weight` | Balanced acc. | Macro-F1 | PR-AUC (real) | Recall (real) |
 | --- | --- | --- | --- | --- | --- |
@@ -109,8 +111,22 @@ Six baselines (3 backbones × with/without class weighting); validation split:
 | ResNet-18 | none | 0.811 | 0.686 | 0.660 | 0.904 |
 | ResNet-18 | balanced | 0.803 | 0.690 | 0.653 | 0.871 |
 
-CLIP ViT-B/32 without class weights is the selected model (current `params.yaml`). See the
-[model card](docs/model_card.md) and the report for the analysis.
+Regularisation sweep of the selected head (CLIP ViT-B/32, balanced class weights); C = 1
+overfits the embeddings (train ROC-AUC 1.000):
+
+| C | Balanced acc. | Macro-F1 | PR-AUC (real) | Recall (real) | ROC-AUC train / val | Threshold |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 0.911 | 0.829 | 0.896 | 0.952 | 1.000 / 0.970 | 0.994 |
+| 0.3 | 0.916 | 0.850 | 0.900 | 0.938 | 1.000 / 0.973 | 0.919 |
+| 0.1 | 0.919 | 0.871 | 0.910 | 0.919 | 0.999 / 0.976 | 0.707 |
+| 0.03 | 0.931 | 0.877 | 0.924 | 0.943 | 0.999 / 0.980 | 0.688 |
+| **0.01** | **0.935** | **0.884** | **0.933** | 0.947 | 0.998 / 0.982 | 0.570 |
+
+CLIP ViT-B/32 with balanced class weights and C = 0.01 is the selected model (current
+`params.yaml`): class weighting keeps the head robust to other class ratios in future training
+data, and the tuned threshold (0.57) is saved inside the model, so both the joblib bundle and
+the MLflow model classify with it. See the [model card](docs/model_card.md) and the report for
+the analysis.
 
 ## Team
 

@@ -28,7 +28,7 @@ metrics:
 
 - **Developed by:** Team Vera.
 - **Model date / version:** September 2026; v0.1 (Milestone 2 baseline).
-- **Model type:** binary image classifier (real vs AI-generated) built by **transfer learning**: the image encoder of **CLIP ViT-B/32** (OpenAI weights, via open_clip), used **frozen**, maps each 224×224 image to a 512-d embedding; a **standardisation + logistic-regression** head (L2, C = 1.0, no class weights) outputs P(AI). The image is flagged as AI when P(AI) ≥ 0.992, a threshold tuned on validation to maximise balanced accuracy. Chosen among six tracked baselines (ResNet-18, ResNet-50 and CLIP ViT-B/32, each with and without class weighting); hyper-parameters live in `params.yaml` and every run is logged to MLflow (DagsHub).
+- **Model type:** binary image classifier (real vs AI-generated) built by **transfer learning**: the image encoder of **CLIP ViT-B/32** (OpenAI weights, via open_clip), used **frozen**, maps each 224×224 image to a 512-d embedding; a **standardisation + logistic-regression** head (L2, C = 0.01, balanced class weights) outputs P(AI). The image is flagged as AI when P(AI) ≥ 0.57, a threshold tuned on validation to maximise balanced accuracy and stored inside the saved model. Backbone chosen among six tracked baselines (ResNet-18, ResNet-50 and CLIP ViT-B/32, each with and without class weighting), then C chosen with a sweep over 0.01–1; hyper-parameters live in `params.yaml` and every run is logged to MLflow (DagsHub).
 - **Training data:** [Defactify / MS-COCOAI](https://huggingface.co/datasets/Rajarshi-Roy-research/Defactify_Image_Dataset) (easily configurable to other datasets) (see the [dataset card](dataset_card.md)).
 - **Licence:** code under the repository licence; training data under CC BY 4.0.
 - **Questions / comments:** Team Vera (see report cover).
@@ -53,7 +53,7 @@ Caption-grouped validation split (1,254 images from 120 captions: 209 real, 1,04
 
 ## Training data
 
-A caption-grouped subsample of Defactify (800 captions with all six sources; 5,352 training images from 560 captions: 892 real, 4,460 AI), same preprocessing. The ~5:1 fake:real imbalance is handled by tuning the decision threshold on validation; class weighting was also tried and made no significant difference (see below).
+A caption-grouped subsample of Defactify (800 captions with all six sources; 5,352 training images from 560 captions: 892 real, 4,460 AI), same preprocessing. The ~5:1 fake:real imbalance is handled by balanced class weights, so the head does not depend on the class ratio of the training data, plus the decision threshold tuned on validation.
 
 ## Quantitative analyses
 
@@ -61,15 +61,15 @@ Validation results of the selected model (test-set results follow in Milestone 3
 
 | Metric | Value | Target |
 | --- | --- | --- |
-| Balanced accuracy | 0.916 | ≥ 0.85 ✅ |
-| Macro-F1 | 0.845 | ≥ 0.85 (just below) |
-| Recall (real) | 0.943 | ≥ 0.80 ✅ |
-| PR-AUC (real) | 0.898 | ≥ 0.90 (just below) |
-| ROC-AUC | 0.971 | — |
+| Balanced accuracy | 0.935 | ≥ 0.85 ✅ |
+| Macro-F1 | 0.884 | ≥ 0.85 ✅ |
+| Recall (real) | 0.947 | ≥ 0.80 ✅ |
+| PR-AUC (real) | 0.933 | ≥ 0.90 ✅ |
+| ROC-AUC | 0.982 | — |
 
-Recall per generator (share of its images flagged as AI): SD 2.1 0.856, SDXL 0.952, **SD 3 0.789**, DALL·E 3 0.943, MidJourney 0.904. SD 3 is the hardest generator for every backbone tried.
+Recall per generator (share of its images flagged as AI): SD 2.1 0.876, SDXL 0.971, **SD 3 0.847**, DALL·E 3 0.981, MidJourney 0.943. SD 3 is the hardest generator for every backbone tried.
 
-Compared with the ResNet baselines (validation balanced accuracy 0.80–0.82), the CLIP encoder is about 10 points better and overfits less (train/val balanced accuracy 0.96/0.92 vs 0.96/0.82 for ResNet-50). The leave-one-generator-out drift experiment (cross-generator target ≥ 0.70) is pending.
+Compared with the ResNet baselines (validation balanced accuracy 0.80–0.82), the CLIP encoder is about 10 points better and overfits less (train/val balanced accuracy 0.96/0.92 vs 0.96/0.82 for ResNet-50). With C = 1 the CLIP head still overfits (train ROC-AUC 1.00 vs 0.97 on validation); stronger regularisation (C = 0.01) narrows the gap (0.998 vs 0.982) and adds about 2 points of balanced accuracy and 4 of PR-AUC. The leave-one-generator-out drift experiment (cross-generator target ≥ 0.70) is pending.
 
 ## Ethical considerations
 
