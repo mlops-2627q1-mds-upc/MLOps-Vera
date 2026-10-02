@@ -10,7 +10,6 @@ stages:
     params:
       params.yaml:
         data:
-          data:
           repo_id: Rajarshi-Roy-research/Defactify_Image_Dataset
           revision: 787334f7857fa54f29027a7f09c30e895ad486ef
           n_captions: 800
@@ -55,8 +54,8 @@ stages:
       nfiles: 7735
     - path: mlops_vera/split.py
       hash: md5
-      md5: a159911f94b9528477dbac09985ff36c
-      size: 2431
+      md5: 645afbf0672994e3e7a20dc1e8cbf290
+      size: 2614
     params:
       params.yaml:
         split:
@@ -67,10 +66,66 @@ stages:
     outs:
     - path: data/processed/splits
       hash: md5
-      md5: 8bad3768d2b93548d1289f125fb9f9fd.dir
-      size: 1082459
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
       nfiles: 3
     - path: reports/metrics/split_summary.json
       hash: md5
-      md5: 9babb4b78fe600f21c3389f542307262
-      size: 314
+      md5: b87e913b83b324d04f4799e1967edbf1
+      size: 295
+  embed:
+    cmd: python -m mlops_vera.modeling.embed
+    deps:
+    - path: data/processed/defactify_224
+      hash: md5
+      md5: 67f99c4b31dcf1f9701d4937ef738fa2.dir
+      size: 131333034
+      nfiles: 7735
+    - path: data/processed/splits
+      hash: md5
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
+      nfiles: 3
+    - path: mlops_vera/modeling/embed.py
+      hash: md5
+      md5: e981dc978338fb127db6cdae045f18ae
+      size: 5769
+    params:
+      params.yaml:
+        embed:
+          backbone: clip_vit_b_32
+          batch_size: 64
+    outs:
+    - path: data/processed/embeddings
+      hash: md5
+      md5: 7555c32ba49cc55ecfe988caa564b3ad.dir
+      size: 16956065
+      nfiles: 4
+  train:
+    cmd: python -m mlops_vera.modeling.train
+    deps:
+    - path: data/processed/embeddings
+      hash: md5
+      md5: 7555c32ba49cc55ecfe988caa564b3ad.dir
+      size: 16956065
+      nfiles: 4
+    - path: mlops_vera/modeling/train.py
+      hash: md5
+      md5: 3927673c05d9fe8b602a9c2ec9ac57f5
+      size: 8339
+    params:
+      params.yaml:
+        train:
+          C: 0.01
+          class_weight: balanced
+          max_iter: 1000
+          seed: 42
+    outs:
+    - path: models/classifier.joblib
+      hash: md5
+      md5: 9e232ba7a8e63d55d60402e1a7aeeb27
+      size: 16024
+    - path: reports/metrics/train_metrics.json
+      hash: md5
+      md5: 70567dd84ceb507946078d701c0e18fe
+      size: 932

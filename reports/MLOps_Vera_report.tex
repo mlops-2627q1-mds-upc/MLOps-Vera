@@ -283,9 +283,9 @@ The project runs on general-purpose laptops and free-tier cloud, so we favour tr
 \newpage
 
 \subsubsection{Model card}
-\textit{Model card following Mitchell et al.\ (2019). At inception the model is not yet trained; quantitative results are completed in Milestones 2--3. The full card lives in the repository (e.g., \texttt{docs/model\_card.md}).}
+\textit{Model card following Mitchell et al.\ (2019). Written at inception and updated in Milestone~2 with the selected baseline (see \emph{Experiment tracking}); test-set results are completed in Milestone~3. The full card lives in the repository (\texttt{docs/model\_card.md}).}
 
-\paragraph{Model details.} Real-vs-AI image classifier by \textbf{Team Vera} (UPC MLOps, 2026--27). Version 0.1 (planned). Type: binary image classifier built by \textbf{transfer learning} --- a pretrained backbone (e.g., ResNet or a frozen CLIP encoder) with a lightweight classification head; final architecture and hyper-parameters are set in Milestone~2 and tracked with MLflow. Trained on the Defactify dataset. Licence: code under the repository licence; data under CC BY 4.0. Contact: Team Vera (see cover).
+\paragraph{Model details.} Real-vs-AI image classifier by \textbf{Team Vera} (UPC MLOps, 2026--27). Version 0.1 (Milestone~2 baseline, September 2026). Type: binary image classifier built by \textbf{transfer learning} --- the \textbf{frozen} image encoder of \textbf{CLIP ViT-B/32} (512-d embeddings) with a standardisation + \textbf{logistic-regression} head (C~$=0.01$, balanced class weights); the image is flagged as AI when $P(\text{AI}) \geq 0.57$, a threshold tuned on validation and stored inside the model. Selected among six baselines and a regularisation sweep tracked with MLflow. Trained on the Defactify dataset. Licence: code under the repository licence; data under CC BY 4.0. Contact: Team Vera (see cover).
 
 \paragraph{Intended use.}
 \begin{itemize}[nosep,leftmargin=1.4em]
@@ -309,13 +309,13 @@ The project runs on general-purpose laptops and free-tier cloud, so we favour tr
 
 \paragraph{Evaluation data.} The Defactify \textbf{test} split, re-split by caption to be leakage-free. Preprocessing: centre-crop/resize to a fixed square and uniform re-encoding so shape and format cannot leak the label.
 
-\paragraph{Training data.} The Defactify \textbf{train} split (same preprocessing). Class imbalance handled via class weights or generator-stratified balanced sampling.
+\paragraph{Training data.} A caption-grouped subsample of Defactify (5{,}352 training images from 560 captions, same preprocessing). The $\sim$5:1 imbalance is handled by balanced class weights, which keep the head independent of the training class ratio, and by the tuned threshold.
 
-\paragraph{Quantitative analyses.} \emph{To be completed in Milestones 2--3}: overall metrics on the leakage-free test set and per-generator (unitary) results, including the leave-one-generator-out drift experiment.
+\paragraph{Quantitative analyses.} On validation: balanced accuracy 0.935, macro-F1 0.884, recall (real) 0.947, PR-AUC (real) 0.933; recall per generator from 0.85 (SD~3) to 0.98 (DALL-E~3). Test-set results and the leave-one-generator-out drift experiment follow in Milestone~3.
 
 \paragraph{Ethical considerations.} Dual-use (a detector can be evaded); false positives may wrongly flag genuine images, so outputs are advisory and expect human oversight. The dataset's scope and biases (above) bound where the model is valid. Training energy/CO$_2$ is tracked with CodeCarbon.
 
-\paragraph{Caveats \& recommendations.} Guard against the aspect-ratio/format shortcut; expect accuracy to drop on unseen or newer generators (monitor drift and retrain as needed); the model is trained on modest-resolution, COCO-domain images and should not be assumed to transfer out-of-domain. Results are pending until training in Milestones 2--3.
+\paragraph{Caveats \& recommendations.} Guard against the aspect-ratio/format shortcut; expect accuracy to drop on unseen or newer generators (monitor drift and retrain as needed); the model is trained on modest-resolution, COCO-domain images and should not be assumed to transfer out-of-domain.
 
 \newpage
 
@@ -411,7 +411,96 @@ To minimise mistakes, GitHub enforces these rules instead of relying on discipli
 \guideline{(e.g., DVC)}
 
 \subsubsection{Experiment tracking}
-\guideline{(e.g., MLflow)}
+
+\paragraph{Tooling.} Training runs are tracked with \textbf{MLflow}, using the tracking server that \textbf{DagsHub} hosts for our repository (\url{https://dagshub.com/AdriSegurao/MLOps-Vera.mlflow}). The same DagsHub project already serves as our DVC remote, so code, data and experiments are browsable in one place, for free and shared by the whole team. Credentials live in a git-ignored \texttt{.env} file (template in \texttt{.env.example}); without it, runs fall back to a local SQLite store (\texttt{./mlflow.db}), so the pipeline and its tests never depend on the network.
+
+\paragraph{Integration with DVC.} Model building is split into two DVC stages. \texttt{embed} passes every preprocessed image through a \emph{frozen} pretrained backbone and stores one embedding per image and split. \texttt{train} fits a standardisation + logistic-regression head on those embeddings, tunes the decision threshold on validation (maximising balanced accuracy, as the model card specifies) and logs the run to MLflow. Keeping the costly forward pass in its own stage means that changing only head parameters re-runs \texttt{train} alone, in seconds. An experiment is a variation of \texttt{params.yaml} launched with \texttt{dvc exp run -S <param>=<value>}: DVC records the exact code, parameters, data hashes and metrics of each experiment as a Git reference (\texttt{dvc exp show}, \texttt{dvc exp push}), while MLflow provides the visual comparison and stores the artefacts. The test split is never read by \texttt{train}; it is reserved for the final evaluation, so that choosing between experiments cannot overfit it.
+
+\paragraph{What each run records.}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \textbf{Parameters:} the \texttt{embed} (backbone, batch size) and \texttt{train} (C, class weighting, iterations, seed) sections of \texttt{params.yaml}.
+  \item \textbf{Metrics} on train and validation: the model-card metrics (balanced accuracy, macro-F1, PR-AUC and recall of the minority real class), plus ROC-AUC, the recall of each generator and the tuned threshold.
+  \item \textbf{Traceability tags:} the pinned dataset revision, the DVC hash of the embeddings the head was trained on, and the backbone weights; MLflow adds the Git commit. Any run can therefore be tied to the exact code and data that produced it.
+  \item \textbf{Artefacts:} the validation confusion matrix and precision--recall curve, and the fitted model with its input signature. The tuned threshold is baked into the logged model (scikit-learn's \texttt{FixedThresholdClassifier}), so its \texttt{predict()} gives the same decisions as the DVC-versioned model.
+\end{itemize}
+Runs are named \texttt{<backbone>-logreg-<balanced|unweighted>-C<C>} so they can be told apart at a glance in the MLflow UI.
+
+% TODO: add a screenshot of the DagsHub MLflow run comparison, e.g.
+% \begin{figure}[h]\centering
+%   \includegraphics[width=\textwidth]{images/mlflow-runs.png}
+%   \caption{Baseline runs compared in the DagsHub MLflow UI.}
+% \end{figure}
+
+\paragraph{Baseline experiments.} We compared three ImageNet- or web-pretrained backbones used as frozen feature extractors: ResNet-18 and ResNet-50 (torchvision) and the image encoder of CLIP ViT-B/32 (OpenAI weights, via open\_clip). Each was trained with and without class weighting against the $\sim$5:1 fake:real imbalance (C~$=1$), giving six runs, cheap enough to run on a laptop CPU with our $\sim$7.7k-image subsample. Table~\ref{tab:baselines} shows the validation results.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Baseline experiments (validation split, 1{,}254 images: 209 real, 1{,}045 AI).}
+\label{tab:baselines}
+\begin{tabular}{@{}llccccc@{}}
+\toprule
+\textbf{Backbone} & \textbf{Class weight} & \textbf{Bal.\ acc.} & \textbf{Macro-F1} & \textbf{PR-AUC (real)} & \textbf{Recall (real)} & \textbf{Train bal.\ acc.} \\
+\midrule
+\textbf{CLIP ViT-B/32} & \textbf{none} & \textbf{0.916} & \textbf{0.845} & \textbf{0.898} & 0.943 & 0.960 \\
+CLIP ViT-B/32 & balanced & 0.911 & 0.829 & 0.896 & \textbf{0.952} & 0.949 \\
+ResNet-50 & none & 0.821 & 0.717 & 0.582 & 0.871 & 0.960 \\
+ResNet-50 & balanced & 0.816 & 0.712 & 0.563 & 0.866 & 0.964 \\
+ResNet-18 & none & 0.811 & 0.686 & 0.660 & 0.904 & 0.873 \\
+ResNet-18 & balanced & 0.803 & 0.690 & 0.653 & 0.871 & 0.893 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\small
+\caption{Share of each generator's validation images detected as AI (recall per generator).}
+\label{tab:per-generator}
+\begin{tabular}{@{}llccccc@{}}
+\toprule
+\textbf{Backbone} & \textbf{Class weight} & \textbf{SD 2.1} & \textbf{SDXL} & \textbf{SD 3} & \textbf{DALL-E 3} & \textbf{MidJourney} \\
+\midrule
+CLIP ViT-B/32 & none & 0.856 & 0.952 & 0.789 & 0.943 & 0.904 \\
+CLIP ViT-B/32 & balanced & 0.809 & 0.952 & 0.775 & 0.933 & 0.880 \\
+ResNet-50 & none & 0.708 & 0.809 & 0.713 & 0.871 & 0.751 \\
+ResNet-50 & balanced & 0.689 & 0.794 & 0.722 & 0.876 & 0.746 \\
+ResNet-18 & none & 0.684 & 0.713 & 0.641 & 0.794 & 0.756 \\
+ResNet-18 & balanced & 0.708 & 0.713 & 0.646 & 0.837 & 0.770 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Findings and model selection.}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \textbf{The backbone dominates.} CLIP improves balanced accuracy by about 10 points over both ResNets and raises the PR-AUC of the real class from 0.56--0.66 to 0.90. It is the only backbone that meets MR-1 (balanced accuracy $\geq 0.85$). This is consistent with prior work showing that frozen CLIP features, learnt from web-scale image--text pairs, transfer well to generated-image detection (Ojha et al., CVPR 2023).
+  \item \textbf{A bigger ImageNet backbone barely helps.} ResNet-50 gains one point over ResNet-18 but overfits more (0.96 train vs.\ 0.82 validation balanced accuracy); CLIP shows the smallest gap (0.96 vs.\ 0.92).
+  \item \textbf{Class weighting hardly changes the scores.} Tuning the threshold on validation already compensates for the imbalance, so weighted and unweighted heads differ by less than one point, which is within noise for 209 real validation images.
+  \item \textbf{SD~3 is the hardest generator} for every backbone (0.79 recall with CLIP), while SDXL and DALL-E~3 are the easiest; per-generator results will be studied further with the leave-one-generator-out experiment (MR-4).
+\end{itemize}
+We keep \textbf{CLIP ViT-B/32} as backbone and \textbf{balanced class weights}: although the scores barely differ here, weighting makes the head independent of the class ratio, so it can be retrained on data with a different imbalance without retuning.
+
+\paragraph{Regularisation sweep.} With C~$=1$ the CLIP head fits the training set almost perfectly (train ROC-AUC 1.000 vs.\ 0.970 on validation). Since the embeddings are cached, a sweep of C only re-runs \texttt{train} (a few seconds per run); Table~\ref{tab:c-sweep} shows that stronger regularisation narrows the gap and improves every validation metric, with C~$=0.01$ best. It also brings the tuned threshold down from 0.99 to 0.57, i.e.\ the balanced head's probabilities are better calibrated.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Regularisation sweep of the CLIP ViT-B/32 head with balanced class weights (validation split).}
+\label{tab:c-sweep}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+\textbf{C} & \textbf{Bal.\ acc.} & \textbf{Macro-F1} & \textbf{PR-AUC (real)} & \textbf{Recall (real)} & \textbf{ROC-AUC train / val} & \textbf{Threshold} \\
+\midrule
+1 & 0.911 & 0.829 & 0.896 & \textbf{0.952} & 1.000 / 0.970 & 0.994 \\
+0.3 & 0.916 & 0.850 & 0.900 & 0.938 & 1.000 / 0.973 & 0.919 \\
+0.1 & 0.919 & 0.871 & 0.910 & 0.919 & 0.999 / 0.976 & 0.707 \\
+0.03 & 0.931 & 0.877 & 0.924 & 0.943 & 0.999 / 0.980 & 0.688 \\
+\textbf{0.01} & \textbf{0.935} & \textbf{0.884} & \textbf{0.933} & 0.947 & 0.998 / 0.982 & 0.570 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The selected model is therefore \textbf{CLIP ViT-B/32 + logistic regression with balanced class weights and C~$=0.01$}, which meets all four validation targets (MR-1--MR-3); it is the configuration committed in \texttt{params.yaml} and versioned with DVC. Its evaluation on the held-out test split is part of Milestone~3.
 
 % ----- 2.3 Milestone 3 -----
 \subsection{Milestone 3: Model Building -- Quality Assurance}
