@@ -100,6 +100,28 @@ rebuilds outputs from Hugging Face and the code; after changing something, run `
 and commit the updated `dvc.lock`. The amount of data is the `data.n_captions` parameter: change it
 and run `dvc repro` to build a larger version, while DVC keeps both versions.
 
+### Is the subsample large enough?
+
+The `learning_curve` stage re-trains the selected head on growing fractions of the training
+captions (5 random draws per fraction) and evaluates each fit on the validation split:
+
+| Training captions | Images (real) | Balanced acc. | ROC-AUC | PR-AUC (real) |
+| --- | --- | --- | --- | --- |
+| 10% | 515 (86) | 0.905 | 0.964 | 0.876 |
+| 25% | 1,250 (208) | 0.925 | 0.977 | 0.914 |
+| 50% | 2,712 (452) | 0.929 | 0.978 | 0.919 |
+| 75% | 4,060 (677) | 0.931 | 0.981 | 0.930 |
+| 100% | 5,352 (892) | 0.935 | 0.982 | 0.933 |
+
+The curve flattens early: four times more data (25% to 100%) adds about one point of balanced
+accuracy, less than the noise of the validation set (±2 points). More captions would mainly give
+larger test sets and narrower confidence intervals, not a better model.
+
+```bash
+uv run dvc repro learning_curve   # re-run it (seconds, reuses the embeddings)
+uv run dvc plots show             # line chart of the curve (dvc_plots/index.html)
+```
+
 ## Experiment tracking (MLflow)
 
 Training runs are logged with **MLflow** to the tracking server hosted by DagsHub:

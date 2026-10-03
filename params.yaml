@@ -50,3 +50,9 @@ logo:
   seed: 42
   # MR-4 target, checked on the worst held-out generator (strictest reading of the requirement).
   target_balanced_accuracy: 0.70
+
+learning_curve:
+  # Fractions of the training captions the `train` head is re-trained on; each fraction below 1
+  # is averaged over `n_seeds` random draws of captions.
+  fractions: [0.1, 0.25, 0.5, 0.75, 1.0]
+  n_seeds: 5

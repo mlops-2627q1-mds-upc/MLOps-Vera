@@ -104,3 +104,24 @@ stages:
           x: balanced_accuracy
           y: holdout
           title: Balanced accuracy on an unseen generator (leave-one-generator-out)
+
+  # Is the subsample large enough? Re-trains the `train` head on growing caption fractions.
+  learning_curve:
+    cmd: python -m mlops_vera.modeling.learning_curve
+    deps:
+      - mlops_vera/modeling/learning_curve.py
+      - mlops_vera/config.py
+      - mlops_vera/modeling/train.py
+      - mlops_vera/modeling/captions.py
+      - data/processed/embeddings
+      - data/processed/splits
+    params:
+      - train
+      - learning_curve
+    plots:
+      - reports/metrics/learning_curve.csv:
+          cache: false
+          template: linear
+          x: n_images
+          y: balanced_accuracy
+          title: Validation balanced accuracy vs. training images (learning curve)

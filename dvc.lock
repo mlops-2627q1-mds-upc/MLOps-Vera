@@ -413,3 +413,52 @@ stages:
       hash: md5
       md5: 4edb0aeb8122ee0e45004de140b18531
       size: 1017
+  learning_curve:
+    cmd: python -m mlops_vera.modeling.learning_curve
+    deps:
+    - path: data/processed/embeddings
+      hash: md5
+      md5: 7555c32ba49cc55ecfe988caa564b3ad.dir
+      size: 16956065
+      nfiles: 4
+    - path: data/processed/splits
+      hash: md5
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
+      nfiles: 3
+    - path: mlops_vera/config.py
+      hash: md5
+      md5: e4ab3df7df83b24b22e9c8ddc5c00710
+      size: 1556
+    - path: mlops_vera/modeling/captions.py
+      hash: md5
+      md5: f2fcd746d07d22d50c4bce8a0ec01987
+      size: 776
+    - path: mlops_vera/modeling/learning_curve.py
+      hash: md5
+      md5: 6050166ba5d9cc47ab7f30cdb84dac06
+      size: 3282
+    - path: mlops_vera/modeling/train.py
+      hash: md5
+      md5: 3927673c05d9fe8b602a9c2ec9ac57f5
+      size: 8339
+    params:
+      params.yaml:
+        learning_curve:
+          fractions:
+          - 0.1
+          - 0.25
+          - 0.5
+          - 0.75
+          - 1.0
+          n_seeds: 5
+        train:
+          C: 0.01
+          class_weight: balanced
+          max_iter: 1000
+          seed: 42
+    outs:
+    - path: reports/metrics/learning_curve.csv
+      hash: md5
+      md5: 9104666e06d72b17dd0f69ca11edaf6f
+      size: 948
