@@ -1,0 +1,7 @@
+{
+  "mean_balanced_accuracy": 0.897872340425532,
+  "min_balanced_accuracy": 0.821808510638298,
+  "worst_generator": "sd3",
+  "target_balanced_accuracy": 0.7,
+  "meets_mr4": true
+}

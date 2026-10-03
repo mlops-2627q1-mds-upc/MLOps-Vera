@@ -1,0 +1,3 @@
+# Check out text files with LF endings on every OS: DVC hashes file bytes, so CRLF checkouts
+# on Windows make every tracked script look modified in `dvc status` / `dvc repro`.
+* text=auto eol=lf
