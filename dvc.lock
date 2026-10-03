@@ -157,14 +157,23 @@ stages:
       md5: 7555c32ba49cc55ecfe988caa564b3ad.dir
       size: 16956065
       nfiles: 4
+    - path: data/processed/splits
+      hash: md5
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
+      nfiles: 3
     - path: mlops_vera/config.py
       hash: md5
       md5: e4ab3df7df83b24b22e9c8ddc5c00710
       size: 1556
+    - path: mlops_vera/modeling/captions.py
+      hash: md5
+      md5: f2fcd746d07d22d50c4bce8a0ec01987
+      size: 776
     - path: mlops_vera/modeling/logo.py
       hash: md5
-      md5: b81c8c700fefed24b0bedd574328380c
-      size: 5387
+      md5: 8f9fb33c48b0f50236f7a6796345b15d
+      size: 6119
     - path: mlops_vera/modeling/train.py
       hash: md5
       md5: 3927673c05d9fe8b602a9c2ec9ac57f5
@@ -181,8 +190,8 @@ stages:
     outs:
     - path: reports/metrics/logo/sd21.json
       hash: md5
-      md5: 4366dc327bae4208ca728ac9b7dd1118
-      size: 870
+      md5: 881b3b5815af976b77f495462d1cf6d7
+      size: 871
   logo@sdxl:
     cmd: python -m mlops_vera.modeling.logo sdxl
     deps:
@@ -191,14 +200,23 @@ stages:
       md5: 7555c32ba49cc55ecfe988caa564b3ad.dir
       size: 16956065
       nfiles: 4
+    - path: data/processed/splits
+      hash: md5
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
+      nfiles: 3
     - path: mlops_vera/config.py
       hash: md5
       md5: e4ab3df7df83b24b22e9c8ddc5c00710
       size: 1556
+    - path: mlops_vera/modeling/captions.py
+      hash: md5
+      md5: f2fcd746d07d22d50c4bce8a0ec01987
+      size: 776
     - path: mlops_vera/modeling/logo.py
       hash: md5
-      md5: b81c8c700fefed24b0bedd574328380c
-      size: 5387
+      md5: 8f9fb33c48b0f50236f7a6796345b15d
+      size: 6119
     - path: mlops_vera/modeling/train.py
       hash: md5
       md5: 3927673c05d9fe8b602a9c2ec9ac57f5
@@ -215,7 +233,7 @@ stages:
     outs:
     - path: reports/metrics/logo/sdxl.json
       hash: md5
-      md5: fb49950af000bc6056ded3a83c847a46
+      md5: ed9c714d219a1e07e3a685b1760ccbd7
       size: 871
   logo@sd3:
     cmd: python -m mlops_vera.modeling.logo sd3
@@ -225,14 +243,23 @@ stages:
       md5: 7555c32ba49cc55ecfe988caa564b3ad.dir
       size: 16956065
       nfiles: 4
+    - path: data/processed/splits
+      hash: md5
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
+      nfiles: 3
     - path: mlops_vera/config.py
       hash: md5
       md5: e4ab3df7df83b24b22e9c8ddc5c00710
       size: 1556
+    - path: mlops_vera/modeling/captions.py
+      hash: md5
+      md5: f2fcd746d07d22d50c4bce8a0ec01987
+      size: 776
     - path: mlops_vera/modeling/logo.py
       hash: md5
-      md5: b81c8c700fefed24b0bedd574328380c
-      size: 5387
+      md5: 8f9fb33c48b0f50236f7a6796345b15d
+      size: 6119
     - path: mlops_vera/modeling/train.py
       hash: md5
       md5: 3927673c05d9fe8b602a9c2ec9ac57f5
@@ -249,7 +276,7 @@ stages:
     outs:
     - path: reports/metrics/logo/sd3.json
       hash: md5
-      md5: 4ede42086b91ac596ad23de419eb0bac
+      md5: a57b48909cad0390e949ce0bf23e64e5
       size: 867
   logo@dalle3:
     cmd: python -m mlops_vera.modeling.logo dalle3
@@ -259,14 +286,23 @@ stages:
       md5: 7555c32ba49cc55ecfe988caa564b3ad.dir
       size: 16956065
       nfiles: 4
+    - path: data/processed/splits
+      hash: md5
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
+      nfiles: 3
     - path: mlops_vera/config.py
       hash: md5
       md5: e4ab3df7df83b24b22e9c8ddc5c00710
       size: 1556
+    - path: mlops_vera/modeling/captions.py
+      hash: md5
+      md5: f2fcd746d07d22d50c4bce8a0ec01987
+      size: 776
     - path: mlops_vera/modeling/logo.py
       hash: md5
-      md5: b81c8c700fefed24b0bedd574328380c
-      size: 5387
+      md5: 8f9fb33c48b0f50236f7a6796345b15d
+      size: 6119
     - path: mlops_vera/modeling/train.py
       hash: md5
       md5: 3927673c05d9fe8b602a9c2ec9ac57f5
@@ -283,8 +319,8 @@ stages:
     outs:
     - path: reports/metrics/logo/dalle3.json
       hash: md5
-      md5: 417e975c2b2912c4a350a8ccb7b69869
-      size: 871
+      md5: 59c006cf51f88d2e91002a828c15525f
+      size: 872
   logo@midjourney:
     cmd: python -m mlops_vera.modeling.logo midjourney
     deps:
@@ -293,14 +329,23 @@ stages:
       md5: 7555c32ba49cc55ecfe988caa564b3ad.dir
       size: 16956065
       nfiles: 4
+    - path: data/processed/splits
+      hash: md5
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
+      nfiles: 3
     - path: mlops_vera/config.py
       hash: md5
       md5: e4ab3df7df83b24b22e9c8ddc5c00710
       size: 1556
+    - path: mlops_vera/modeling/captions.py
+      hash: md5
+      md5: f2fcd746d07d22d50c4bce8a0ec01987
+      size: 776
     - path: mlops_vera/modeling/logo.py
       hash: md5
-      md5: b81c8c700fefed24b0bedd574328380c
-      size: 5387
+      md5: 8f9fb33c48b0f50236f7a6796345b15d
+      size: 6119
     - path: mlops_vera/modeling/train.py
       hash: md5
       md5: 3927673c05d9fe8b602a9c2ec9ac57f5
@@ -317,7 +362,7 @@ stages:
     outs:
     - path: reports/metrics/logo/midjourney.json
       hash: md5
-      md5: e070f32f0e44b0707f8607287eeddd26
+      md5: f504286044dc33fe122dbebe383a3a72
       size: 870
   logo_summary:
     cmd: python -m mlops_vera.modeling.logo_summary
@@ -332,23 +377,23 @@ stages:
       size: 1783
     - path: reports/metrics/logo/dalle3.json
       hash: md5
-      md5: 417e975c2b2912c4a350a8ccb7b69869
-      size: 871
+      md5: 59c006cf51f88d2e91002a828c15525f
+      size: 872
     - path: reports/metrics/logo/midjourney.json
       hash: md5
-      md5: e070f32f0e44b0707f8607287eeddd26
+      md5: f504286044dc33fe122dbebe383a3a72
       size: 870
     - path: reports/metrics/logo/sd21.json
       hash: md5
-      md5: 4366dc327bae4208ca728ac9b7dd1118
-      size: 870
+      md5: 881b3b5815af976b77f495462d1cf6d7
+      size: 871
     - path: reports/metrics/logo/sd3.json
       hash: md5
-      md5: 4ede42086b91ac596ad23de419eb0bac
+      md5: a57b48909cad0390e949ce0bf23e64e5
       size: 867
     - path: reports/metrics/logo/sdxl.json
       hash: md5
-      md5: fb49950af000bc6056ded3a83c847a46
+      md5: ed9c714d219a1e07e3a685b1760ccbd7
       size: 871
     params:
       params.yaml:
@@ -366,5 +411,5 @@ stages:
       size: 179
     - path: reports/metrics/logo_table.csv
       hash: md5
-      md5: b9f716bc67b6e49d92e43715675411e5
-      size: 1015
+      md5: 4edb0aeb8122ee0e45004de140b18531
+      size: 1017

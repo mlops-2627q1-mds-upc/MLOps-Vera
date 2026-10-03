@@ -194,13 +194,15 @@ Each branch is also an MLflow run (`<backbone>-logo-<generator>`, experiment `ve
 
 | Held-out generator | Balanced acc. (95% CI) | Recall of the unseen generator | Recall (real) |
 | --- | --- | --- | --- |
-| SD 2.1 | 0.872 (0.838–0.907) | 0.814 | 0.931 |
-| SDXL | 0.957 (0.936–0.976) | 0.984 | 0.931 |
-| **SD 3** | **0.822 (0.787–0.856)** | **0.670** | 0.973 |
-| DALL·E 3 | 0.923 (0.894–0.949) | 0.920 | 0.926 |
-| MidJourney | 0.915 (0.883–0.942) | 0.904 | 0.926 |
+| SD 2.1 | 0.872 (0.827–0.914) | 0.814 | 0.931 |
+| SDXL | 0.957 (0.936–0.977) | 0.984 | 0.931 |
+| **SD 3** | **0.822 (0.765–0.872)** | **0.670** | 0.973 |
+| DALL·E 3 | 0.923 (0.884–0.956) | 0.920 | 0.926 |
+| MidJourney | 0.915 (0.880–0.948) | 0.904 | 0.926 |
 
-Mean 0.898, worst 0.822 (SD 3): MR-4 is met. Each test set has 188 real and 188 generated images.
+Mean 0.898, worst 0.822 (SD 3): MR-4 is met. Each test set has 188 real and 188 generated images
+from 120 captions; the 95% bootstrap CI resamples whole captions, since images of the same caption
+show the same scene and their errors are correlated.
 
 ## Team
 

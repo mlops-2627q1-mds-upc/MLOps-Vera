@@ -12,6 +12,7 @@ import pytest
 import typer
 
 from mlops_vera.modeling import logo, logo_summary
+from mlops_vera.modeling.captions import load_captions
 from mlops_vera.modeling.logo import bootstrap_ci, real_and_generator, without_generator
 from tests.test_train import _synthetic_split
 
@@ -31,27 +32,61 @@ def test_real_and_generator_keeps_real_and_holdout_only():
     np.testing.assert_array_equal(X_k, X[(gen == 0) | (gen == 3)])
 
 
+def test_load_captions_follows_the_embedding_order(tmp_path):
+    np.savez(tmp_path / "test.npz", image_id=np.array(["b", "a", "c"]))
+    pd.DataFrame({"image_id": ["a", "b", "c"], "caption": ["cap a", "cap b", "cap c"]}).to_csv(
+        tmp_path / "test.csv", index=False
+    )
+    assert list(load_captions(tmp_path, tmp_path, "test")) == ["cap b", "cap a", "cap c"]
+
+
 def test_bootstrap_ci_brackets_the_point_estimate():
     rng = np.random.default_rng(0)
     y = np.repeat([0, 1], 100)
+    groups = np.tile(np.arange(100), 2)  # caption i: one real and one generated image
     pred = np.where(rng.random(200) < 0.8, y, 1 - y)  # ~80% correct
-    low, high = bootstrap_ci(y, pred, n_resamples=500, seed=0)
+    low, high = bootstrap_ci(y, pred, groups, n_resamples=500, seed=0)
     point = (pred[y == 0] == 0).mean() / 2 + (pred[y == 1] == 1).mean() / 2
     assert low < point < high
-    assert bootstrap_ci(y, pred, n_resamples=500, seed=0) == (low, high)  # seeded
+    assert bootstrap_ci(y, pred, groups, n_resamples=500, seed=0) == (low, high)  # seeded
+
+
+def test_bootstrap_ci_resamples_whole_captions():
+    # 50 captions with 2 real + 2 generated images each; errors are clustered: every image of
+    # the first 10 captions is misclassified. Resampling single images treats the 200 images as
+    # independent and understates the uncertainty, resampling captions does not.
+    groups = np.repeat(np.arange(50), 4)
+    y = np.tile([0, 0, 1, 1], 50)
+    pred = np.where(groups < 10, 1 - y, y)
+    by_caption = bootstrap_ci(y, pred, groups, n_resamples=1000, seed=0)
+    by_image = bootstrap_ci(y, pred, np.arange(len(y)), n_resamples=1000, seed=0)
+    assert by_caption[1] - by_caption[0] > 1.5 * (by_image[1] - by_image[0])
 
 
 def test_main_never_sees_the_holdout_before_testing(tmp_path, monkeypatch):
     monkeypatch.setenv("MLFLOW_TRACKING_URI", f"sqlite:///{tmp_path / 'mlflow.db'}")
     rng = np.random.default_rng(0)
-    emb = tmp_path / "embeddings"
+    emb, splits = tmp_path / "embeddings", tmp_path / "splits"
     emb.mkdir()
+    splits.mkdir()
     for split, n in (("train", 30), ("val", 10), ("test", 10)):
         X, y, generator = _synthetic_split(n, rng)
-        np.savez(emb / f"{split}.npz", X=X, y=y, generator=generator)
+        image_id = np.array([f"{split}_{i}" for i in range(len(y))])
+        np.savez(emb / f"{split}.npz", X=X, y=y, generator=generator, image_id=image_id)
+        # Caption j has one image per source (real + 5 generators), like the real dataset
+        captions = [f"caption {j}" for j in np.tile(np.arange(n), 6)]
+        pd.DataFrame({"image_id": image_id, "caption": captions}).to_csv(
+            splits / f"{split}.csv", index=False
+        )
     (emb / "info.json").write_text(json.dumps({"backbone": "toy", "weights": None}))
 
-    logo.main("sd3", embeddings_dir=emb, output_dir=tmp_path / "logo", experiment="test")
+    logo.main(
+        "sd3",
+        embeddings_dir=emb,
+        splits_dir=splits,
+        output_dir=tmp_path / "logo",
+        experiment="test",
+    )
 
     m = json.loads((tmp_path / "logo" / "sd3.json").read_text())
     assert m["holdout"] == "sd3"

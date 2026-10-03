@@ -9,7 +9,10 @@ Simulates a new generator appearing in production, the drift monitored in Milest
   only. Both come from the caption-grouped test split, so no caption seen in training appears
   in it, and every caption has a real photo and an unseen generated image (content-controlled).
 - The unseen balanced accuracy gets a bootstrap 95% confidence interval: each test set has only
-  ~190 images per class, so small differences between generators can be noise.
+  ~190 images per class, so small differences between generators can be noise. The bootstrap
+  resamples whole captions, the unit the split is grouped by: images of the same caption show the
+  same scene, so their errors are correlated and resampling single images would understate the
+  uncertainty.
 
 Runs on the frozen embeddings of `embed`: no image is processed again, so each run takes seconds.
 DVC runs one stage per generator in params.yaml (`foreach`), and `logo_summary` aggregates them.
@@ -24,7 +27,8 @@ import numpy as np
 from sklearn.metrics import balanced_accuracy_score
 import typer
 
-from mlops_vera.config import EMBEDDINGS_DIR, METRICS_DIR, load_params
+from mlops_vera.config import EMBEDDINGS_DIR, METRICS_DIR, SPLITS_DIR, load_params
+from mlops_vera.modeling.captions import load_captions
 from mlops_vera.modeling.train import (
     GENERATORS,
     build_model,
@@ -47,27 +51,30 @@ def without_generator(split: Split, g: int) -> Split:
     return X[keep], y[keep], generator[keep]
 
 
+def real_or_generator(generator: np.ndarray, g: int) -> np.ndarray:
+    """Mask of the real images and the images of generator `g`."""
+    return (generator == 0) | (generator == g)
+
+
 def real_and_generator(split: Split, g: int) -> Split:
     """Keep the real images and the images of generator `g` only."""
     X, y, generator = split
-    keep = (generator == 0) | (generator == g)
+    keep = real_or_generator(generator, g)
     return X[keep], y[keep], generator[keep]
 
 
 def bootstrap_ci(
-    y: np.ndarray, pred: np.ndarray, n_resamples: int, seed: int
+    y: np.ndarray, pred: np.ndarray, groups: np.ndarray, n_resamples: int, seed: int
 ) -> tuple[float, float]:
-    """95% percentile bootstrap interval of the balanced accuracy, resampling within each class
-    so every resample keeps both classes (and the same class sizes)."""
+    """95% percentile bootstrap interval of the balanced accuracy, resampling whole `groups`
+    (captions) with replacement. Resamples that miss a class are skipped."""
     rng = np.random.default_rng(seed)
-    by_class = [np.flatnonzero(y == c) for c in (0, 1)]
-    stats = [
-        balanced_accuracy_score(y[idx], pred[idx])
-        for idx in (
-            np.concatenate([rng.choice(i, size=len(i)) for i in by_class])
-            for _ in range(n_resamples)
-        )
-    ]
+    members = [np.flatnonzero(groups == c) for c in np.unique(groups)]
+    stats = []
+    for _ in range(n_resamples):
+        idx = np.concatenate([members[i] for i in rng.integers(0, len(members), len(members))])
+        if len(np.unique(y[idx])) == 2:
+            stats.append(balanced_accuracy_score(y[idx], pred[idx]))
     low, high = np.percentile(stats, [2.5, 97.5])
     return float(low), float(high)
 
@@ -76,6 +83,7 @@ def bootstrap_ci(
 def main(
     holdout: str,
     embeddings_dir: Path = EMBEDDINGS_DIR,
+    splits_dir: Path = SPLITS_DIR,
     output_dir: Path = METRICS_DIR / "logo",
     experiment: str = "vera-logo",
 ):
@@ -87,7 +95,9 @@ def main(
 
     X_train, y_train, _ = without_generator(load_split(embeddings_dir, "train"), g)
     X_val, y_val, gen_val = without_generator(load_split(embeddings_dir, "val"), g)
-    X_test, y_test, gen_test = real_and_generator(load_split(embeddings_dir, "test"), g)
+    test = load_split(embeddings_dir, "test")
+    X_test, y_test, gen_test = real_and_generator(test, g)
+    captions = load_captions(embeddings_dir, splits_dir, "test")[real_or_generator(test[2], g)]
 
     model = build_model(p).fit(X_train, y_train)
     scores_val = model.predict_proba(X_val)[:, 1]
@@ -96,7 +106,11 @@ def main(
     unseen = evaluate(y_test, gen_test, scores_test, threshold)
     del unseen[f"recall_{holdout}"]  # the only AI images are the held-out ones: = recall_ai
     low, high = bootstrap_ci(
-        y_test, (scores_test >= threshold).astype(int), p_logo["n_bootstrap"], p_logo["seed"]
+        y_test,
+        (scores_test >= threshold).astype(int),
+        captions,
+        p_logo["n_bootstrap"],
+        p_logo["seed"],
     )
     unseen |= {"balanced_accuracy_ci_low": low, "balanced_accuracy_ci_high": high}
     metrics = {

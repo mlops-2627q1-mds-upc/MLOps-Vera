@@ -70,7 +70,9 @@ stages:
         - mlops_vera/modeling/logo.py
         - mlops_vera/config.py
         - mlops_vera/modeling/train.py
+        - mlops_vera/modeling/captions.py
         - data/processed/embeddings
+        - data/processed/splits  # captions, for the caption-level bootstrap
       params:
         - train
         - logo.n_bootstrap

@@ -45,7 +45,7 @@ logo:
   # `train` head without that generator and tests it on real images + that generator only.
   holdout: [sd21, sdxl, sd3, dalle3, midjourney]
   # Bootstrap resamples for the 95% confidence interval of the unseen balanced accuracy
-  # (each test set is small: ~190 real + ~190 generated images).
+  # (each test set is small: ~190 real + ~190 generated images). Whole captions are resampled.
   n_bootstrap: 1000
   seed: 42
   # MR-4 target, checked on the worst held-out generator (strictest reading of the requirement).
