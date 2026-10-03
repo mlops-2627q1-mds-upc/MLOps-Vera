@@ -54,6 +54,52 @@ Based on [Cookiecutter Data Science](https://cookiecutter-data-science.drivendat
 └── Makefile               # make requirements | data | train | test | lint
 ```
 
+## Getting the data (DVC)
+
+The data, the intermediate outputs and the trained model are versioned with **DVC**. Git stores the
+pipeline (`dvc.yaml`), its parameters (`params.yaml`) and the fingerprint of every output
+(`dvc.lock`); the files themselves are in the DVC remote on DagsHub
+(`https://dagshub.com/AdriSegurao/MLOps-Vera.dvc`, set in `.dvc/config`).
+
+| Stage | What it does | Output |
+| --- | --- | --- |
+| `download` | Caption-grouped subsample of Defactify (800 captions → 7,734 images), pinned to a fixed dataset revision | `data/raw/defactify` (~610 MB) |
+| `preprocess` | Centre-crop, resize to 224 px and re-encode as JPEG | `data/processed/defactify_224` (~130 MB) |
+| `split` | 70/15/15 train/val/test split grouped by caption | `data/processed/splits` |
+| `embed` | Frozen CLIP ViT-B/32 embedding of every image | `data/processed/embeddings` (~17 MB) |
+| `train` | Logistic-regression head on the embeddings | `models/classifier.joblib` |
+| `logo@<generator>`, `logo_summary` | Leave-one-generator-out evaluation | metrics only |
+
+### One-time access setup
+
+The DagsHub repository is public, but DagsHub only serves DVC data to signed-in users. Create a
+free DagsHub account (signing in with GitHub works) and an access token (DagsHub → User settings →
+Tokens), then store them locally; both files are git-ignored:
+
+```bash
+uv run dvc remote modify origin --local auth basic
+uv run dvc remote modify origin --local user <dagshub-username>
+uv run dvc remote modify origin --local password <dagshub-token>
+cp .env.example .env   # MLflow: fill in the same username and token
+```
+
+Use the same token in `.dvc/config.local` and `.env`. If `dvc pull` reports missing files while
+MLflow works, the DVC token is the usual cause: DVC reports a rejected login as missing files.
+
+### Pulling and reproducing
+
+```bash
+uv run dvc pull                            # everything (~760 MB): data, embeddings and model
+uv run dvc pull data/processed/embeddings  # just enough to re-train or evaluate the head (~17 MB)
+uv run dvc status                          # "Data and pipelines are up to date" = matches dvc.lock
+uv run dvc repro                           # re-runs only the stages whose code, params or inputs changed
+```
+
+`dvc pull` downloads the exact files the pipeline produced, so nothing is re-trained. `dvc repro`
+rebuilds outputs from Hugging Face and the code; after changing something, run `uv run dvc push`
+and commit the updated `dvc.lock`. The amount of data is the `data.n_captions` parameter: change it
+and run `dvc repro` to build a larger version, while DVC keeps both versions.
+
 ## Experiment tracking (MLflow)
 
 Training runs are logged with **MLflow** to the tracking server hosted by DagsHub:
