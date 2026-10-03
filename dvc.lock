@@ -136,19 +136,19 @@ stages:
     params:
       params.yaml:
         train:
-          C: 0.01
+          C: 1
           class_weight: balanced
           max_iter: 1000
           seed: 42
     outs:
     - path: models/classifier.joblib
       hash: md5
-      md5: a072bc587f8bdb509ff9e149a8b76fc8
-      size: 16024
+      md5: c96d79614df173d81ae6989c5627f081
+      size: 16008
     - path: reports/metrics/train_metrics.json
       hash: md5
-      md5: 70567dd84ceb507946078d701c0e18fe
-      size: 932
+      md5: 10f96edaa31906bf1e36cfce93035f7a
+      size: 918
   logo@sd21:
     cmd: python -m mlops_vera.modeling.logo sd21
     deps:
