@@ -114,6 +114,21 @@ Findings from our exploratory analysis ([`notebooks/data-exploration.ipynb`](../
 
 Centre-crop/resize every image to a fixed square and re-encode all images to one format/quality, so neither aspect ratio nor compression leaks the label; version data and splits with DVC.
 
+## Version used in this project
+
+The pipeline (see the [README](../README.md)) derives a smaller, versioned dataset from the original one described above:
+
+| Property | Value |
+|---|---|
+| Source | `Rajarshi-Roy-research/Defactify_Image_Dataset`, pinned to revision `787334f` (`data.revision` in `params.yaml`) |
+| Subsample | 800 captions drawn at random (seed 42) among those with all six sources (real + 5 generators) |
+| Images | 7,734: 1,289 real and 6,445 AI-generated, so the original 5:1 ratio is kept |
+| Preprocessing | centre-crop to a square, resize to 224 × 224 and re-encode as JPEG (quality 90), as recommended above |
+| Split | caption-grouped 70/15/15: train 5,352 images (560 captions), validation 1,254 (120), test 1,128 (120) |
+| Versioning | DVC: the files are on the DagsHub remote and their fingerprints in `dvc.lock`; `uv run dvc pull` retrieves them (~760 MB) |
+
+**Why a subsample.** Training and evaluation run on laptop CPUs, and a smaller dataset keeps the pipeline fast to run and to share. The `learning_curve` stage shows it is large enough for the model: validation balanced accuracy goes from 0.905 with 10% of the training captions to 0.935 with all of them, and four times more data (25% to 100%) adds only about one point, below the noise of the validation split. More captions would mainly narrow the confidence intervals of the evaluation. The size is the `data.n_captions` parameter, so a larger version can be built with `dvc repro` and versioned alongside this one.
+
 ## Licensing
 
 **CC BY 4.0** (author-declared in the paper); the real images additionally follow **MS COCO**'s terms. Attribute both the Defactify paper and MS COCO.
