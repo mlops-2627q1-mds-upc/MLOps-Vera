@@ -68,6 +68,11 @@ data:
 train:
 	uv run dvc repro train
 
+## Run the leave-one-generator-out study (MR-4: logo@<generator> -> logo_summary)
+.PHONY: logo
+logo:
+	uv run dvc repro logo_summary
+
 ## Run tests
 .PHONY: test
 test:
