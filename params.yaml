@@ -31,8 +31,9 @@ embed:
 
 train:
   # Logistic-regression head fitted on the frozen embeddings.
-  # Inverse L2 regularisation strength. Chosen with a sweep over 0.01-1: C = 1 overfits the
-  # 512-d CLIP embeddings (train ROC-AUC 1.00 vs 0.97 on val).
+  # Inverse L2 regularisation strength. Chosen with a sweep over 0.001-1: C = 1 overfits the
+  # 512-d CLIP embeddings (train ROC-AUC 1.00 vs 0.97 on val); below 0.01 the metrics level off
+  # within the validation noise, so 0.01 is kept.
   C: 0.01
   # `balanced` reweights the loss by inverse class frequency, so the head stays calibrated
   # against the 5:1 fake:real imbalance (or any other ratio in future training data).

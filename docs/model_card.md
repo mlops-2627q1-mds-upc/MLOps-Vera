@@ -69,7 +69,7 @@ Validation results of the selected model (test-set results follow in Milestone 3
 
 Recall per generator (share of its images flagged as AI): SD 2.1 0.876, SDXL 0.971, **SD 3 0.847**, DALL·E 3 0.981, MidJourney 0.943. SD 3 is the hardest generator for every backbone tried.
 
-Compared with the ResNet baselines (validation balanced accuracy 0.80–0.82), the CLIP encoder is about 10 points better and overfits less (train/val balanced accuracy 0.96/0.92 vs 0.96/0.82 for ResNet-50). With C = 1 the CLIP head still overfits (train ROC-AUC 1.00 vs 0.97 on validation); stronger regularisation (C = 0.01) narrows the gap (0.998 vs 0.982) and adds about 2 points of balanced accuracy and 4 of PR-AUC.
+Compared with the ResNet baselines (validation balanced accuracy 0.80–0.82), the CLIP encoder is about 10 points better and overfits less (train/val balanced accuracy 0.96/0.92 vs 0.96/0.82 for ResNet-50). With C = 1 the CLIP head still overfits (train ROC-AUC 1.00 vs 0.97 on validation); stronger regularisation (C = 0.01) narrows the gap (0.998 vs 0.982) and adds about 2 points of balanced accuracy and 4 of PR-AUC. Extending the sweep to C = 0.003 and 0.001 changes balanced accuracy by at most 0.002, well within the validation noise, so C = 0.01 is kept.
 
 **Cross-generator generalisation (leave-one-generator-out, MR-4).** For each generator, the same head is trained without it (train and val, threshold tuning included) and tested on the test split's real images plus that generator's images only (188 + 188 images from 120 captions). The 95% bootstrap CI resamples whole captions, since images of the same caption show the same scene and their errors are correlated:
 

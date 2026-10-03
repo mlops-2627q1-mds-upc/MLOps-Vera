@@ -189,6 +189,14 @@ overfits the embeddings (train ROC-AUC 1.000):
 | 0.1 | 0.919 | 0.871 | 0.910 | 0.919 | 0.999 / 0.976 | 0.707 |
 | 0.03 | 0.931 | 0.877 | 0.924 | 0.943 | 0.999 / 0.980 | 0.688 |
 | **0.01** | **0.935** | **0.884** | **0.933** | 0.947 | 0.998 / 0.982 | 0.570 |
+| 0.003 | 0.937 | 0.887 | 0.937 | 0.947 | 0.995 / 0.984 | 0.509 |
+| 0.001 | 0.935 | 0.900 | 0.937 | 0.928 | 0.992 / 0.984 | 0.427 |
+
+Since C = 0.01 was the smallest value of the first sweep, the sweep was extended to 0.003 and
+0.001. Below 0.01 the metrics level off: balanced accuracy changes by at most 0.002, far below the
+noise of the validation split (±2 points with 209 real images), so C = 0.01 is kept rather than
+picking a winner by noise. Every value of the sweep is stored as a DVC experiment
+(`clip-vit-b-32-balanced-C<C>`; `uv run dvc exp pull origin <name>`, then `uv run dvc exp show -A`).
 
 CLIP ViT-B/32 with balanced class weights and C = 0.01 is the selected model (current
 `params.yaml`): class weighting keeps the head robust to other class ratios in future training
