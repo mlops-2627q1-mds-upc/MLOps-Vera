@@ -90,7 +90,7 @@ MLflow works, the DVC token is the usual cause: DVC reports a rejected login as 
 
 ```bash
 uv run dvc pull                            # everything (~760 MB): data, embeddings and model
-uv run dvc pull data/processed/embeddings  # just enough to re-train or evaluate the head (~17 MB)
+uv run dvc pull data/processed/embeddings data/processed/splits  # enough to re-train or evaluate the head (~18 MB)
 uv run dvc status                          # "Data and pipelines are up to date" = matches dvc.lock
 uv run dvc repro                           # re-runs only the stages whose code, params or inputs changed
 ```
