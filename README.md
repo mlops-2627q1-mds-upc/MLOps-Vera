@@ -128,6 +128,34 @@ data, and the tuned threshold (0.57) is saved inside the model, so both the jobl
 the MLflow model classify with it. See the [model card](docs/model_card.md) and the report for
 the analysis.
 
+### Cross-generator generalisation (leave-one-generator-out)
+
+Requirement MR-4 asks how the detector copes with a generator it has never seen, the drift we
+expect in production. The `logo` stage is a DVC `foreach` with one branch per generator listed in
+`params.yaml` (`logo.holdout`): `logo@sd3` trains the selected head without any SD 3 image in
+train or val (threshold tuning included), then tests it on the real images of the test split plus
+the SD 3 images only. All branches reuse the embeddings, so each one takes seconds, and DVC only
+re-runs the branches whose inputs changed. `logo_summary` joins them into one table and checks the
+target (balanced accuracy ≥ 0.70) on the worst generator:
+
+```bash
+uv run dvc repro logo_summary   # or a single branch: uv run dvc repro logo@sd3
+uv run dvc metrics show         # per-generator metrics and the summary
+uv run dvc plots show           # bar chart of the unseen balanced accuracy (dvc_plots/index.html)
+```
+
+Each branch is also an MLflow run (`<backbone>-logo-<generator>`, experiment `vera-logo`).
+
+| Held-out generator | Balanced acc. (95% CI) | Recall of the unseen generator | Recall (real) |
+| --- | --- | --- | --- |
+| SD 2.1 | 0.872 (0.838–0.907) | 0.814 | 0.931 |
+| SDXL | 0.957 (0.936–0.976) | 0.984 | 0.931 |
+| **SD 3** | **0.822 (0.787–0.856)** | **0.670** | 0.973 |
+| DALL·E 3 | 0.923 (0.894–0.949) | 0.920 | 0.926 |
+| MidJourney | 0.915 (0.883–0.942) | 0.904 | 0.926 |
+
+Mean 0.898, worst 0.822 (SD 3): MR-4 is met. Each test set has 188 real and 188 generated images.
+
 ## Team
 
 | Member | GitHub |
