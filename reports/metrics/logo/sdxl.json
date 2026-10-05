@@ -1,6 +1,6 @@
 {
   "holdout": "sdxl",
-  "threshold": 0.5533196330070496,
+  "threshold": 0.5533190369606018,
   "n_unseen": {
     "real": 188,
     "ai": 188
@@ -24,7 +24,7 @@
     "pr_auc_real": 0.9928287457127489,
     "recall_real": 0.9308510638297872,
     "recall_ai": 0.9840425531914894,
-    "balanced_accuracy_ci_low": 0.9361702127659575,
-    "balanced_accuracy_ci_high": 0.976063829787234
+    "balanced_accuracy_ci_low": 0.936109496124031,
+    "balanced_accuracy_ci_high": 0.9772784090909091
   }
 }

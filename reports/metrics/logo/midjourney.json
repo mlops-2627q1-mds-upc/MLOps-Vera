@@ -1,6 +1,6 @@
 {
   "holdout": "midjourney",
-  "threshold": 0.5114791989326477,
+  "threshold": 0.5114785432815552,
   "n_unseen": {
     "real": 188,
     "ai": 188
@@ -24,7 +24,7 @@
     "pr_auc_real": 0.968280441027849,
     "recall_real": 0.925531914893617,
     "recall_ai": 0.9042553191489362,
-    "balanced_accuracy_ci_low": 0.8829787234042553,
-    "balanced_accuracy_ci_high": 0.9415558510638298
+    "balanced_accuracy_ci_low": 0.8801020408163265,
+    "balanced_accuracy_ci_high": 0.9479279891304349
   }
 }

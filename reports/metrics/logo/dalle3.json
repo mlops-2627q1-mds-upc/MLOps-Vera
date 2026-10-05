@@ -1,6 +1,6 @@
 {
   "holdout": "dalle3",
-  "threshold": 0.5444743633270264,
+  "threshold": 0.5444746613502502,
   "n_unseen": {
     "real": 188,
     "ai": 188
@@ -24,7 +24,7 @@
     "pr_auc_real": 0.9747252454910507,
     "recall_real": 0.925531914893617,
     "recall_ai": 0.9202127659574468,
-    "balanced_accuracy_ci_low": 0.8936170212765957,
-    "balanced_accuracy_ci_high": 0.949468085106383
+    "balanced_accuracy_ci_low": 0.8839136904761904,
+    "balanced_accuracy_ci_high": 0.9563985085945399
   }
 }

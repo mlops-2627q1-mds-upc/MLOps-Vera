@@ -69,17 +69,17 @@ Validation results of the selected model (test-set results follow in Milestone 3
 
 Recall per generator (share of its images flagged as AI): SD 2.1 0.876, SDXL 0.971, **SD 3 0.847**, DALL·E 3 0.981, MidJourney 0.943. SD 3 is the hardest generator for every backbone tried.
 
-Compared with the ResNet baselines (validation balanced accuracy 0.80–0.82), the CLIP encoder is about 10 points better and overfits less (train/val balanced accuracy 0.96/0.92 vs 0.96/0.82 for ResNet-50). With C = 1 the CLIP head still overfits (train ROC-AUC 1.00 vs 0.97 on validation); stronger regularisation (C = 0.01) narrows the gap (0.998 vs 0.982) and adds about 2 points of balanced accuracy and 4 of PR-AUC.
+Compared with the ResNet baselines (validation balanced accuracy 0.80–0.82), the CLIP encoder is about 10 points better and overfits less (train/val balanced accuracy 0.96/0.92 vs 0.96/0.82 for ResNet-50). With C = 1 the CLIP head still overfits (train ROC-AUC 1.00 vs 0.97 on validation); stronger regularisation (C = 0.01) narrows the gap (0.998 vs 0.982) and adds about 2 points of balanced accuracy and 4 of PR-AUC. Extending the sweep to C = 0.003 and 0.001 changes balanced accuracy by at most 0.002, well within the validation noise, so C = 0.01 is kept.
 
-**Cross-generator generalisation (leave-one-generator-out, MR-4).** For each generator, the same head is trained without it (train and val, threshold tuning included) and tested on the test split's real images plus that generator's images only (188 + 188 images, 95% bootstrap CI):
+**Cross-generator generalisation (leave-one-generator-out, MR-4).** For each generator, the same head is trained without it (train and val, threshold tuning included) and tested on the test split's real images plus that generator's images only (188 + 188 images from 120 captions). The 95% bootstrap CI resamples whole captions, since images of the same caption show the same scene and their errors are correlated:
 
 | Held-out generator | Balanced accuracy | Recall of the unseen generator | Recall (real) |
 | --- | --- | --- | --- |
-| SD 2.1 | 0.872 (0.838–0.907) | 0.814 | 0.931 |
-| SDXL | 0.957 (0.936–0.976) | 0.984 | 0.931 |
-| **SD 3** | **0.822 (0.787–0.856)** | **0.670** | 0.973 |
-| DALL·E 3 | 0.923 (0.894–0.949) | 0.920 | 0.926 |
-| MidJourney | 0.915 (0.883–0.942) | 0.904 | 0.926 |
+| SD 2.1 | 0.872 (0.827–0.914) | 0.814 | 0.931 |
+| SDXL | 0.957 (0.936–0.977) | 0.984 | 0.931 |
+| **SD 3** | **0.822 (0.765–0.872)** | **0.670** | 0.973 |
+| DALL·E 3 | 0.923 (0.884–0.956) | 0.920 | 0.926 |
+| MidJourney | 0.915 (0.880–0.948) | 0.904 | 0.926 |
 
 The worst case (SD 3, 0.822) meets the cross-generator target (≥ 0.70); the mean is 0.898. The drop is concentrated in the generated class: real images stay well recognised, but an unseen SD 3 image is detected only 67% of the time, against 85% on validation when SD 3 is part of training. SD 2.1 also drops, while SDXL, DALL·E 3 and MidJourney stay close to the in-distribution results, so their artefacts seem to be shared with the other generators.
 
