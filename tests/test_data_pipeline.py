@@ -4,6 +4,7 @@ Uses tiny synthetic parquet shards that mimic the Defactify schema, so no networ
 """
 
 import io
+import json
 
 import numpy as np
 import pandas as pd
@@ -12,6 +13,8 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 
+from mlops_vera import features, split
+from mlops_vera.config import load_params
 from mlops_vera.dataset import fetch_images, read_metadata, select_captions
 from mlops_vera.features import preprocess_image
 from mlops_vera.split import caption_grouped_split
@@ -85,3 +88,50 @@ def test_split_has_no_caption_leakage():
     out = caption_grouped_split(meta, {"train": 0.7, "val": 0.15, "test": 0.15}, seed=42)
     assert out.groupby("caption")["split"].nunique().max() == 1
     assert out["split"].value_counts().to_dict() == {"train": 420, "val": 90, "test": 90}
+
+
+def test_preprocess_main_writes_square_jpegs_and_metadata(tmp_path):
+    raw, out = tmp_path / "raw", tmp_path / "processed"
+    (raw / "images").mkdir(parents=True)
+    Image.new("RGB", (640, 480)).save(raw / "images" / "a.png")
+    pd.DataFrame(
+        {
+            "image_id": ["a"],
+            "file": ["images/a.png"],
+            "caption": ["c"],
+            "label_a": [0],
+            "label_b": [0],
+            "width": [640],
+            "height": [480],
+            "format": ["png"],
+        }
+    ).to_csv(raw / "metadata.csv", index=False)
+
+    features.main(input_dir=raw, output_dir=out)
+
+    meta = pd.read_csv(out / "metadata.csv")
+    assert list(meta["file"]) == ["images/a.jpg"] and "format" not in meta
+    assert (meta["orig_width"].item(), meta["orig_height"].item()) == (640, 480)
+    with Image.open(out / "images" / "a.jpg") as im:
+        size = load_params("preprocess")["img_size"]
+        assert (im.format, im.mode, im.size) == ("JPEG", "RGB", (size, size))
+
+
+def test_split_main_writes_disjoint_splits_and_summary(tmp_path, monkeypatch):
+    monkeypatch.setattr(split, "METRICS_DIR", tmp_path / "metrics")
+    pd.DataFrame(
+        {
+            "image_id": [f"i{n}" for n in range(120)],
+            "caption": np.repeat([f"c{i}" for i in range(20)], 6),
+            "label_a": [0, 1, 1, 1, 1, 1] * 20,
+        }
+    ).to_csv(tmp_path / "metadata.csv", index=False)
+
+    split.main(input_dir=tmp_path, output_dir=tmp_path / "splits")
+
+    parts = {s: pd.read_csv(tmp_path / "splits" / f"{s}.csv") for s in split.SPLITS}
+    captions = [set(p["caption"]) for p in parts.values()]
+    assert all(not (a & b) for i, a in enumerate(captions) for b in captions[i + 1 :])
+    assert sum(len(p) for p in parts.values()) == 120
+    summary = json.loads((tmp_path / "metrics" / "split_summary.json").read_text())
+    assert summary["train"] == {"n_images": 84, "n_captions": 14, "n_real": 14, "n_ai": 70}

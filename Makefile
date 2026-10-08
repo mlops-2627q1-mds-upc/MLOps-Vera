@@ -73,10 +73,15 @@ train:
 logo:
 	uv run dvc repro logo_summary
 
-## Run tests
+## Validate the image metadata with Great Expectations (Data Docs in reports/data_docs)
+.PHONY: validate
+validate:
+	uv run dvc repro validate_data
+
+## Run all tests with coverage (`uv run pytest -m "not model"` skips the slower model tests)
 .PHONY: test
 test:
-	uv run pytest tests
+	uv run pytest --cov=mlops_vera --cov-report=term-missing
 
 
 #################################################################################

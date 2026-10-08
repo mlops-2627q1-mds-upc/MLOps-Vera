@@ -64,6 +64,7 @@ dev = [
     "black>=26.5.1",
     "pylint>=4.0.8",
     "pytest>=9.1.1",
+    "pytest-cov>=6.0",
 ]
 
 # CPU-only PyTorch wheels (the default Linux/Windows wheels bundle CUDA, ~2-3 GB).
