@@ -22,6 +22,20 @@ split:
   test: 0.15
   seed: 42
 
+validate:
+  # Great Expectations thresholds on the image metadata (DR-8). Observed values on the current
+  # data in brackets, so the bounds catch broken data rather than normal variation.
+  raw_size_range: [64, 4096]      # raw width/height in pixels [222, 1024]
+  min_file_kb: 1.0                # preprocessed JPEG size [2.8, 32 KB]
+  brightness_range: [5, 250]      # mean grey level, catches black/white images [16, 221]
+  min_contrast: 4.0               # grey-level std, catches flat images [8.4, 114]
+  ai_share_range: [0.80, 0.87]    # 5 generators per real photo = 0.833
+  real_share_range: [0.12, 0.22]  # real share in each split [~0.167]
+  max_split_share_deviation: 0.02 # caption share of each split vs. the split fractions above
+  # No preprocessed-image feature alone may separate real from AI (ROC-AUC folded to [0.5, 1]).
+  # Before preprocessing, the aspect ratio alone reaches 0.75.
+  max_shortcut_auc: 0.60
+
 embed:
   # Pretrained backbone, used frozen as a feature extractor (transfer learning; cheap enough
   # to run on CPU for our subsample): any torchvision classifier (resnet18, resnet50, ...) or

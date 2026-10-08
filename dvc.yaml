@@ -34,6 +34,35 @@ stages:
       - reports/metrics/split_summary.json:
           cache: false
 
+  # Data validation (DR-8): images are described as a metadata table, which Great Expectations
+  # checks. `validate_data` fails on bad data, so `dvc repro` stops.
+  image_metadata:
+    cmd: python -m mlops_vera.metadata
+    deps:
+      - mlops_vera/metadata.py
+      - mlops_vera/config.py
+      - data/raw/defactify
+      - data/processed/defactify_224
+      - data/processed/splits
+    outs:
+      - data/interim/image_metadata.csv
+
+  validate_data:
+    cmd: python -m mlops_vera.validate
+    deps:
+      - mlops_vera/validate.py
+      - mlops_vera/metadata.py
+      - mlops_vera/config.py
+      - data/interim/image_metadata.csv
+      - data/raw/defactify/source.json
+    params:
+      - validate
+      - split
+      - preprocess.img_size
+    metrics:
+      - reports/metrics/data_validation.json:
+          cache: false
+
   embed:
     cmd: python -m mlops_vera.modeling.embed
     deps:

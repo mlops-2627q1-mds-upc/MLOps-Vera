@@ -462,3 +462,87 @@ stages:
       hash: md5
       md5: 9104666e06d72b17dd0f69ca11edaf6f
       size: 948
+  image_metadata:
+    cmd: python -m mlops_vera.metadata
+    deps:
+    - path: data/processed/defactify_224
+      hash: md5
+      md5: 67f99c4b31dcf1f9701d4937ef738fa2.dir
+      size: 131333034
+      nfiles: 7735
+    - path: data/processed/splits
+      hash: md5
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
+      nfiles: 3
+    - path: data/raw/defactify
+      hash: md5
+      md5: 0ae7bdd3d32154856d0562ea1eb554a5.dir
+      size: 609772333
+      nfiles: 7736
+    - path: mlops_vera/config.py
+      hash: md5
+      md5: e4ab3df7df83b24b22e9c8ddc5c00710
+      size: 1556
+    - path: mlops_vera/metadata.py
+      hash: md5
+      md5: 093779bea56b8440e507d272011e6352
+      size: 4079
+    outs:
+    - path: data/interim/image_metadata.csv
+      hash: md5
+      md5: 0133c342aaa8f090d32b2d1e195a9f18
+      size: 1833133
+  validate_data:
+    cmd: python -m mlops_vera.validate
+    deps:
+    - path: data/interim/image_metadata.csv
+      hash: md5
+      md5: 0133c342aaa8f090d32b2d1e195a9f18
+      size: 1833133
+    - path: data/raw/defactify/source.json
+      hash: md5
+      md5: b80efe5d135a3dec6e7446d43411d536
+      size: 146
+    - path: mlops_vera/config.py
+      hash: md5
+      md5: e4ab3df7df83b24b22e9c8ddc5c00710
+      size: 1556
+    - path: mlops_vera/metadata.py
+      hash: md5
+      md5: 093779bea56b8440e507d272011e6352
+      size: 4079
+    - path: mlops_vera/validate.py
+      hash: md5
+      md5: 1c03561f854624286511706e5ad9d5af
+      size: 12848
+    params:
+      params.yaml:
+        preprocess.img_size: 224
+        split:
+          train: 0.7
+          val: 0.15
+          test: 0.15
+          seed: 42
+        validate:
+          raw_size_range:
+          - 64
+          - 4096
+          min_file_kb: 1.0
+          brightness_range:
+          - 5
+          - 250
+          min_contrast: 4.0
+          ai_share_range:
+          - 0.8
+          - 0.87
+          real_share_range:
+          - 0.12
+          - 0.22
+          max_split_share_deviation: 0.02
+          max_shortcut_auc: 0.6
+    outs:
+    - path: reports/metrics/data_validation.json
+      hash: md5
+      md5: e8d97d32f183640097aa0e02eac2d088
+      size: 615
