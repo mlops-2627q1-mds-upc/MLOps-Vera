@@ -85,6 +85,7 @@ def shortcut_table(meta: pd.DataFrame, features=SHORTCUT_FEATURES) -> pd.DataFra
 
 
 def images_suite(p: dict, n_images: int, img_size: int) -> gx.ExpectationSuite:
+    """Expectations on each image: schema, labels, raw and preprocessed files, composition."""
     raw_min, raw_max = p["raw_size_range"]
     return gx.ExpectationSuite(
         name="images",
@@ -140,6 +141,7 @@ def images_suite(p: dict, n_images: int, img_size: int) -> gx.ExpectationSuite:
 
 
 def captions_suite() -> gx.ExpectationSuite:
+    """Expectations on each caption: one split only (DR-4) and all six sources."""
     return gx.ExpectationSuite(
         name="captions",
         expectations=[
@@ -153,6 +155,7 @@ def captions_suite() -> gx.ExpectationSuite:
 
 
 def splits_suite(p: dict) -> gx.ExpectationSuite:
+    """Expectations on each split: class ratio, generators present and relative size."""
     return gx.ExpectationSuite(
         name="splits",
         expectations=[
@@ -173,6 +176,7 @@ def splits_suite(p: dict) -> gx.ExpectationSuite:
 
 
 def shortcuts_suite(p: dict) -> gx.ExpectationSuite:
+    """No preprocessed-image feature alone may predict the label (DR-5)."""
     return gx.ExpectationSuite(
         name="shortcuts",
         expectations=[
@@ -248,6 +252,7 @@ def summarise(result) -> dict:
 
 
 def build_tables(meta: pd.DataFrame, fractions: dict) -> dict:
+    """The four tables to validate, by suite name."""
     return {
         "images": meta,
         "captions": caption_table(meta),
@@ -257,6 +262,7 @@ def build_tables(meta: pd.DataFrame, fractions: dict) -> dict:
 
 
 def build_suites(p: dict, n_images: int, img_size: int) -> dict:
+    """The four expectation suites, by name, with the thresholds of params.yaml."""
     return {
         "images": images_suite(p, n_images, img_size),
         "captions": captions_suite(),
@@ -273,6 +279,7 @@ def main(
     docs_dir: Path = DATA_DOCS_DIR,
     docs: bool = True,
 ):
+    """Validate the image metadata; exit with an error if any expectation fails."""
     p = load_params("validate")
     fractions = {s: load_params("split")[s] for s in SPLITS}
     meta = pd.read_csv(metadata_path)

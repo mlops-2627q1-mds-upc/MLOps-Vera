@@ -32,7 +32,7 @@ def caption_subsample(captions: np.ndarray, fraction: float, seed: int) -> np.nd
     return np.isin(captions, chosen)
 
 
-def learning_curve(
+def learning_curve(  # pylint: disable=too-many-locals  # nested loop over fractions and seeds
     train: Split, val: Split, captions: np.ndarray, params: dict, fractions: list, n_seeds: int
 ) -> pd.DataFrame:
     """Validation metrics of the head trained on each fraction, averaged over `n_seeds` draws
@@ -61,6 +61,7 @@ def main(
     splits_dir: Path = SPLITS_DIR,
     output_dir: Path = METRICS_DIR,
 ):
+    """Write the validation learning curve of the `train` head (params.yaml: `learning_curve`)."""
     p, p_lc = load_params("train"), load_params("learning_curve")
     table = learning_curve(
         load_split(embeddings_dir, "train"),

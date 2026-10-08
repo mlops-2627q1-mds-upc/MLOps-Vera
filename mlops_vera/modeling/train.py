@@ -62,6 +62,7 @@ def load_split(embeddings_dir: Path, split: str) -> tuple[np.ndarray, np.ndarray
 
 
 def build_model(p: dict) -> Pipeline:
+    """Standardisation + logistic-regression head with the `train` hyper-parameters `p`."""
     return make_pipeline(
         StandardScaler(),
         LogisticRegression(
@@ -109,6 +110,7 @@ def evaluate(y: np.ndarray, generator: np.ndarray, scores: np.ndarray, threshold
 
 
 def plot_confusion_matrix(y: np.ndarray, pred: np.ndarray) -> Figure:
+    """Confusion matrix of real/AI decisions."""
     fig = Figure(figsize=(4, 4), layout="constrained")
     ConfusionMatrixDisplay.from_predictions(
         y, pred, display_labels=["real", "AI"], colorbar=False, ax=fig.subplots()
@@ -117,6 +119,7 @@ def plot_confusion_matrix(y: np.ndarray, pred: np.ndarray) -> Figure:
 
 
 def plot_pr_curve(y: np.ndarray, scores: np.ndarray) -> Figure:
+    """Precision-recall curve of the minority (real) class."""
     fig = Figure(figsize=(5, 4), layout="constrained")
     PrecisionRecallDisplay.from_predictions(
         y == 0, 1 - scores, name="real (minority)", ax=fig.subplots()
@@ -134,13 +137,24 @@ def dvc_hash(path: str) -> str | None:
     return None
 
 
+def lineage_tags(info: dict) -> dict:
+    """MLflow tags tying a run to its exact inputs: dataset revision, DVC hash of the
+    embeddings and backbone weights (MLflow adds the Git commit)."""
+    return {
+        "backbone_weights": info["weights"],
+        "data_revision": load_params("data")["revision"],
+        "embeddings_md5": dvc_hash("data/processed/embeddings"),
+    }
+
+
 @app.command()
 def main(
     embeddings_dir: Path = EMBEDDINGS_DIR,
     model_path: Path = CLASSIFIER_PATH,
     metrics_path: Path = METRICS_DIR / "train_metrics.json",
     experiment: str = "vera-baselines",
-):
+):  # pylint: disable=too-many-locals  # one linear script: fit, tune, save, log
+    """Fit the head on the train embeddings, tune its threshold on val and log the run."""
     p_embed, p = load_params("embed"), load_params("train")
     info = json.loads((embeddings_dir / "info.json").read_text())
     X_train, y_train, gen_train = load_split(embeddings_dir, "train")
@@ -173,13 +187,7 @@ def main(
     with mlflow.start_run(run_name=run_name) as run:
         mlflow.log_params({f"embed.{k}": v for k, v in p_embed.items()})
         mlflow.log_params({f"train.{k}": v for k, v in p.items()})
-        mlflow.set_tags(
-            {
-                "backbone_weights": info["weights"],
-                "data_revision": load_params("data")["revision"],
-                "embeddings_md5": dvc_hash("data/processed/embeddings"),
-            }
-        )
+        mlflow.set_tags(lineage_tags(info))
         mlflow.log_metric("threshold", threshold)
         for split in ("train", "val"):
             mlflow.log_metrics({f"{split}_{k}": v for k, v in metrics[split].items()})

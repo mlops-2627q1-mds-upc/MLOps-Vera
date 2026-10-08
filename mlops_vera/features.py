@@ -32,6 +32,7 @@ def preprocess_image(img: Image.Image, size: int) -> Image.Image:
 
 @app.command()
 def main(input_dir: Path = RAW_DEFACTIFY_DIR, output_dir: Path = PREPROCESSED_DIR):
+    """Crop, resize and re-encode every raw image (params.yaml: `preprocess`)."""
     p = load_params("preprocess")
     meta = pd.read_csv(input_dir / "metadata.csv")
     (output_dir / "images").mkdir(parents=True, exist_ok=True)

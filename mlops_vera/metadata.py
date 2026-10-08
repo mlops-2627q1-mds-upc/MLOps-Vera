@@ -107,6 +107,7 @@ def main(
     splits_dir: Path = SPLITS_DIR,
     output_path: Path = IMAGE_METADATA_PATH,
 ):
+    """Write the metadata table of every raw and preprocessed image."""
     meta = build_metadata(raw_dir, processed_dir, splits_dir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     meta.to_csv(output_path, index=False, lineterminator="\n")

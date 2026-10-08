@@ -19,6 +19,7 @@ SPLITS = ("train", "val", "test")
 
 
 def caption_grouped_split(meta: pd.DataFrame, fractions: dict, seed: int) -> pd.DataFrame:
+    """Add a `split` column, assigning whole captions to train/val/test by `fractions`."""
     captions = np.sort(meta["caption"].unique())
     np.random.default_rng(seed).shuffle(captions)
     n = len(captions)
@@ -34,6 +35,7 @@ def caption_grouped_split(meta: pd.DataFrame, fractions: dict, seed: int) -> pd.
 
 
 def summarise(meta: pd.DataFrame) -> dict:
+    """Images, captions, real and AI images per split."""
     summary = {}
     for name in SPLITS:
         part = meta[meta["split"] == name]
@@ -48,6 +50,7 @@ def summarise(meta: pd.DataFrame) -> dict:
 
 @app.command()
 def main(input_dir: Path = PREPROCESSED_DIR, output_dir: Path = SPLITS_DIR):
+    """Write the caption-grouped train/val/test splits (params.yaml: `split`)."""
     p = load_params("split")
     assert abs(p["train"] + p["val"] + p["test"] - 1) < 1e-9, "split fractions must sum to 1"
     meta = caption_grouped_split(pd.read_csv(input_dir / "metadata.csv"), p, p["seed"])

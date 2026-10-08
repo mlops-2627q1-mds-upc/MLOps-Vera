@@ -31,6 +31,7 @@ def summarise(table: pd.DataFrame, target: float) -> dict:
 
 @app.command()
 def main(logo_dir: Path = METRICS_DIR / "logo", output_dir: Path = METRICS_DIR):
+    """Join the leave-one-generator-out runs into one table and check MR-4."""
     p = load_params("logo")
     rows = []
     for name in p["holdout"]:

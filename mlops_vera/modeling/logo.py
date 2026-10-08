@@ -32,8 +32,8 @@ from mlops_vera.modeling.captions import load_captions
 from mlops_vera.modeling.train import (
     GENERATORS,
     build_model,
-    dvc_hash,
     evaluate,
+    lineage_tags,
     load_split,
     tune_threshold,
 )
@@ -86,7 +86,8 @@ def main(
     splits_dir: Path = SPLITS_DIR,
     output_dir: Path = METRICS_DIR / "logo",
     experiment: str = "vera-logo",
-):
+):  # pylint: disable=too-many-locals  # one linear script: filter, fit, evaluate, log
+    """Train without generator `holdout` and evaluate on it (one `logo@<generator>` stage)."""
     if holdout not in GENERATOR_IDS:
         raise typer.BadParameter(f"unknown generator {holdout!r}, expected {list(GENERATOR_IDS)}")
     g = GENERATOR_IDS[holdout]
@@ -129,13 +130,7 @@ def main(
     with mlflow.start_run(run_name=f"{info['backbone']}-logo-{holdout}"):
         mlflow.log_params({f"train.{k}": v for k, v in p.items()})
         mlflow.log_params({"holdout": holdout, "embed.backbone": info["backbone"]})
-        mlflow.set_tags(
-            {
-                "backbone_weights": info["weights"],
-                "data_revision": load_params("data")["revision"],
-                "embeddings_md5": dvc_hash("data/processed/embeddings"),
-            }
-        )
+        mlflow.set_tags(lineage_tags(info))
         mlflow.log_metric("threshold", threshold)
         for part in ("val", "unseen"):
             mlflow.log_metrics({f"{part}_{k}": v for k, v in metrics[part].items()})
