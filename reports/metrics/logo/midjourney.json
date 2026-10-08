@@ -1,6 +1,6 @@
 {
   "holdout": "midjourney",
-  "threshold": 0.5114785432815552,
+  "threshold": 0.5114789009094238,
   "n_unseen": {
     "real": 188,
     "ai": 188

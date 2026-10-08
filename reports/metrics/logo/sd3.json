@@ -1,6 +1,6 @@
 {
   "holdout": "sd3",
-  "threshold": 0.6769996881484985,
+  "threshold": 0.677000105381012,
   "n_unseen": {
     "real": 188,
     "ai": 188

@@ -1,6 +1,6 @@
 {
   "holdout": "sdxl",
-  "threshold": 0.5533190369606018,
+  "threshold": 0.5533205270767212,
   "n_unseen": {
     "real": 188,
     "ai": 188
