@@ -4,6 +4,7 @@ stages:
     deps:
       - mlops_vera/dataset.py
       - mlops_vera/config.py
+      - mlops_vera/tracking.py
     params:
       - data
     outs:
@@ -14,6 +15,7 @@ stages:
     deps:
       - mlops_vera/features.py
       - mlops_vera/config.py
+      - mlops_vera/tracking.py
       - data/raw/defactify
     params:
       - preprocess
@@ -25,6 +27,7 @@ stages:
     deps:
       - mlops_vera/split.py
       - mlops_vera/config.py
+      - mlops_vera/tracking.py
       - data/processed/defactify_224
     params:
       - split
@@ -39,6 +42,7 @@ stages:
     deps:
       - mlops_vera/modeling/embed.py
       - mlops_vera/config.py
+      - mlops_vera/tracking.py
       - data/processed/defactify_224
       - data/processed/splits
     params:
@@ -51,6 +55,7 @@ stages:
     deps:
       - mlops_vera/modeling/train.py
       - mlops_vera/config.py
+      - mlops_vera/tracking.py
       - data/processed/embeddings
     params:
       - train
@@ -69,6 +74,7 @@ stages:
       deps:
         - mlops_vera/modeling/logo.py
         - mlops_vera/config.py
+        - mlops_vera/tracking.py
         - mlops_vera/modeling/train.py
         - mlops_vera/modeling/captions.py
         - data/processed/embeddings
@@ -86,6 +92,7 @@ stages:
     deps:
       - mlops_vera/modeling/logo_summary.py
       - mlops_vera/config.py
+      - mlops_vera/tracking.py
       - reports/metrics/logo/sd21.json
       - reports/metrics/logo/sdxl.json
       - reports/metrics/logo/sd3.json
@@ -111,6 +118,7 @@ stages:
     deps:
       - mlops_vera/modeling/learning_curve.py
       - mlops_vera/config.py
+      - mlops_vera/tracking.py
       - mlops_vera/modeling/train.py
       - mlops_vera/modeling/captions.py
       - data/processed/embeddings
