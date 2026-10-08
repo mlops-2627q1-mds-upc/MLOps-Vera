@@ -1,6 +1,6 @@
 {
   "holdout": "dalle3",
-  "threshold": 0.5444746613502502,
+  "threshold": 0.5444742441177368,
   "n_unseen": {
     "real": 188,
     "ai": 188
