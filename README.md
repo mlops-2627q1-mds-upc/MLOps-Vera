@@ -46,7 +46,7 @@ Based on [Cookiecutter Data Science](https://cookiecutter-data-science.drivendat
 │   ├── split.py           #   stage `split`
 │   ├── metadata.py        #   stage `image_metadata`
 │   ├── validate.py        #   stage `validate_data` (Great Expectations)
-│   └── modeling/          #   stages `embed`, `train`; inference
+│   └── modeling/          #   stages `embed`, `train`, `logo`, `learning_curve`
 ├── models/                # Trained classifier (stage `train`, DVC)
 ├── notebooks/             # Exploratory data analysis
 ├── reports/               # LaTeX report, milestone write-ups, metrics/ (DVC metrics)
@@ -54,7 +54,7 @@ Based on [Cookiecutter Data Science](https://cookiecutter-data-science.drivendat
 ├── dvc.yaml / dvc.lock    # Pipeline definition and its locked state
 ├── params.yaml            # Pipeline hyper-parameters
 ├── pyproject.toml / uv.lock
-└── Makefile               # make requirements | data | train | validate | test | lint
+└── Makefile               # make requirements | data | train | validate | test | lint | qa
 ```
 
 ## Getting the data (DVC)
@@ -239,6 +239,8 @@ show the same scene and their errors are correlated.
 
 ## Quality assurance
 
+`make qa` runs every check below (`make lint`, `make nblint`, `make validate`, `make test`).
+
 ### Data validation (Great Expectations)
 
 Great Expectations validates tables, and our data are images, so the `image_metadata` stage first
@@ -268,7 +270,7 @@ feature exceeds 0.55 (file size 0.52, brightness 0.55, contrast 0.53).
 ### Tests (Pytest)
 
 ```bash
-uv run pytest --cov=mlops_vera   # all tests with coverage (87% of the package)
+uv run pytest --cov=mlops_vera   # all tests with coverage (91% of the package)
 uv run pytest -m "not model"     # only the fast, offline tests
 ```
 
@@ -282,6 +284,19 @@ uv run pytest -m "not model"     # only the fast, offline tests
   → `preprocess_image` → backbone) reproduces the training embeddings (no training/serving skew,
   FR-5); and at least 90% of its decisions survive mirroring, JPEG re-compression (q75, q50), a
   10% brightness change or a half-resolution upload (measured: 94–98%).
+
+### Static analysis (Ruff, Pylint, Pynblint)
+
+```bash
+make lint     # ruff format --check, ruff check and pylint on mlops_vera/ and tests/
+make nblint   # Pynblint on the notebooks and the repository
+```
+
+Ruff formats the code and sorts imports; Pylint adds design and documentation checks and rates the
+code **10.00/10** (8.82 before this milestone). Its deviations from the defaults are documented in
+`pyproject.toml`. Pynblint reports no issue in `notebooks/` nor at repository level. It runs as an
+isolated `uvx` tool because it pins an old `typer` that conflicts with ours (and needs
+`click<8.2`, plus UTF-8 mode on Windows).
 
 ## Team
 
