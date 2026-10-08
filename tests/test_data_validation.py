@@ -66,9 +66,7 @@ def _validate(meta: pd.DataFrame) -> dict:
 def _failed(results: dict) -> set[tuple[str, str, str | None]]:
     """(suite, expectation, column) of every failed expectation."""
     return {
-        (suite, f["expectation"], f["column"])
-        for suite, r in results.items()
-        for f in r["failed"]
+        (suite, f["expectation"], f["column"]) for suite, r in results.items() for f in r["failed"]
     }
 
 

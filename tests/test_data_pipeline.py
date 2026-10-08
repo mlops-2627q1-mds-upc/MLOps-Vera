@@ -26,8 +26,8 @@ def _jpeg(w: int, h: int) -> bytes:
     return buf.getvalue()
 
 
-@pytest.fixture
-def shards(tmp_path):
+@pytest.fixture(name="shards")
+def fixture_shards(tmp_path):
     """Two shards, 10 captions x 6 sources, the last caption missing one generator."""
     rows = [
         {"Caption": f"cap {c}", "Label_A": int(b > 0), "Label_B": b}
@@ -48,8 +48,17 @@ def shards(tmp_path):
     return paths
 
 
+def _opener(shards: dict):
+    """`open_shard` callable as used by the download stage, which closes it with `with`."""
+
+    def open_shard(name: str):
+        return open(shards[name], "rb")
+
+    return open_shard
+
+
 def test_select_keeps_whole_complete_caption_groups(shards):
-    meta = read_metadata(lambda s: open(shards[s], "rb"), sorted(shards))
+    meta = read_metadata(_opener(shards), sorted(shards))
     sel = select_captions(meta, n_captions=4, seed=0, complete_only=True)
     assert sel["Caption"].nunique() == 4
     assert "cap 9" not in set(sel["Caption"])  # incomplete group excluded
@@ -57,14 +66,14 @@ def test_select_keeps_whole_complete_caption_groups(shards):
 
 
 def test_select_is_deterministic(shards):
-    meta = read_metadata(lambda s: open(shards[s], "rb"), sorted(shards))
+    meta = read_metadata(_opener(shards), sorted(shards))
     a = select_captions(meta, 3, seed=42)
     b = select_captions(meta.sample(frac=1, random_state=1), 3, seed=42)
     assert set(a["Caption"]) == set(b["Caption"])
 
 
 def test_fetch_images_writes_selected_rows(shards, tmp_path):
-    open_shard = lambda s: open(shards[s], "rb")  # noqa: E731
+    open_shard = _opener(shards)
     meta = read_metadata(open_shard, sorted(shards))
     sel = select_captions(meta, 5, seed=0)
     out = fetch_images(open_shard, sel, tmp_path / "raw")
@@ -83,7 +92,10 @@ def test_preprocess_outputs_fixed_square_rgb(size):
 
 def test_split_has_no_caption_leakage():
     meta = pd.DataFrame(
-        {"caption": np.repeat([f"c{i}" for i in range(100)], 6), "label_a": [0, 1, 1, 1, 1, 1] * 100}
+        {
+            "caption": np.repeat([f"c{i}" for i in range(100)], 6),
+            "label_a": [0, 1, 1, 1, 1, 1] * 100,
+        }
     )
     out = caption_grouped_split(meta, {"train": 0.7, "val": 0.15, "test": 0.15}, seed=42)
     assert out.groupby("caption")["split"].nunique().max() == 1

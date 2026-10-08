@@ -25,7 +25,8 @@ def test_backbone_outputs_features(name, dim):
 
 
 @pytest.mark.parametrize(
-    ("backbone", "mean", "std"), [("resnet18", 0.485, 0.229), ("clip_vit_b_32", 0.48145466, 0.26862954)]
+    ("backbone", "mean", "std"),
+    [("resnet18", 0.485, 0.229), ("clip_vit_b_32", 0.48145466, 0.26862954)],
 )
 def test_image_transform_normalises_as_backbone_expects(backbone, mean, std):
     x = image_transform(backbone)(Image.new("RGB", (224, 224), color=(255, 255, 255)))
@@ -49,5 +50,7 @@ def test_embed_images_keeps_order_and_shape(tmp_path):
     # Same result one image at a time -> batching does not reorder or mix images
     for i, p in enumerate(paths):
         assert torch.allclose(
-            torch.from_numpy(embed_images(model, [p], transform, 1)[0]), torch.from_numpy(X[i]), atol=1e-5
+            torch.from_numpy(embed_images(model, [p], transform, 1)[0]),
+            torch.from_numpy(X[i]),
+            atol=1e-5,
         )

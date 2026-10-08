@@ -44,7 +44,7 @@ requires-python = "~=3.12.0"
 [tool.ruff]
 line-length = 99
 src = ["mlops_vera"]
-include = ["pyproject.toml", "mlops_vera/**/*.py"]
+include = ["pyproject.toml", "mlops_vera/**/*.py", "tests/**/*.py"]
 
 [tool.ruff.lint]
 extend-select = ["I"]  # Add import sorting
@@ -52,6 +52,27 @@ extend-select = ["I"]  # Add import sorting
 [tool.ruff.lint.isort]
 known-first-party = ["mlops_vera"]
 force-sort-within-sections = true
+
+# Pylint complements ruff (formatting, imports) with design and documentation checks.
+# Run with `make lint`. Deviations from the defaults, each with its reason:
+[tool.pylint.main]
+fail-under = 9.5
+
+[tool.pylint.format]
+max-line-length = 99  # same limit as ruff
+
+[tool.pylint.basic]
+# `X`, `X_train`, ...: scikit-learn convention for feature matrices
+good-names-rgxs = ["^X(_[a-z]+)?$"]
+# Test names already say what they check; fixtures are documented by their test
+no-docstring-rgx = "^(_|test_|fixture_)"
+
+[tool.pylint.design]
+# DVC stage entry points (`main`) wire together loading, training, evaluation and logging
+max-locals = 20
+# Embedding and learning-curve helpers take the model, data and run settings explicitly
+max-args = 6
+max-positional-arguments = 6
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
