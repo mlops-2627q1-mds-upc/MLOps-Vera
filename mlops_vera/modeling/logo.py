@@ -32,11 +32,11 @@ from mlops_vera.modeling.captions import load_captions
 from mlops_vera.modeling.train import (
     GENERATORS,
     build_model,
-    dvc_hash,
     evaluate,
     load_split,
     tune_threshold,
 )
+from mlops_vera.tracking import stage_run
 
 app = typer.Typer()
 GENERATOR_IDS = {name: g for g, name in GENERATORS.items()}
@@ -125,17 +125,16 @@ def main(
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / f"{holdout}.json").write_text(json.dumps(metrics, indent=2), newline="\n")
 
-    mlflow.set_experiment(experiment)
-    with mlflow.start_run(run_name=f"{info['backbone']}-logo-{holdout}"):
+    with stage_run(
+        f"logo@{holdout}",
+        experiment,
+        f"{info['backbone']}-logo-{holdout}",
+        inputs=("data/processed/embeddings", "data/processed/splits"),
+    ):
         mlflow.log_params({f"train.{k}": v for k, v in p.items()})
+        mlflow.log_params({f"logo.{k}": p_logo[k] for k in ("n_bootstrap", "seed")})
         mlflow.log_params({"holdout": holdout, "embed.backbone": info["backbone"]})
-        mlflow.set_tags(
-            {
-                "backbone_weights": info["weights"],
-                "data_revision": load_params("data")["revision"],
-                "embeddings_md5": dvc_hash("data/processed/embeddings"),
-            }
-        )
+        mlflow.set_tag("backbone_weights", info["weights"])
         mlflow.log_metric("threshold", threshold)
         for part in ("val", "unseen"):
             mlflow.log_metrics({f"{part}_{k}": v for k, v in metrics[part].items()})
