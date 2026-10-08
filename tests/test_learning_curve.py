@@ -3,6 +3,7 @@
 Uses small synthetic embeddings, so no network is needed.
 """
 
+import mlflow
 import numpy as np
 import pandas as pd
 
@@ -55,9 +56,19 @@ def test_main_writes_the_learning_curve(tmp_path, monkeypatch):
             splits / f"{split}.csv", index=False
         )
 
-    lc.main(embeddings_dir=emb, splits_dir=splits, output_dir=tmp_path)
+    lc.main(embeddings_dir=emb, splits_dir=splits, output_dir=tmp_path, experiment="test")
 
     table = pd.read_csv(tmp_path / "learning_curve.csv")
     assert list(table["fraction"]) == [0.5, 1.0]
     assert {"n_images", "balanced_accuracy", "roc_auc", "pr_auc_real", "f1_macro"} <= set(table)
     assert {"balanced_accuracy_sd", "pr_auc_real_sd"} <= set(table)
+
+    # One MLflow step per training-caption percentage
+    run = mlflow.search_runs(experiment_names=["test"], output_format="list")[0]
+    assert run.data.tags["dvc.stage"] == "learning_curve"
+    assert run.data.params["learning_curve.n_seeds"] == "2"
+    history = mlflow.MlflowClient().get_metric_history(run.info.run_id, "val_balanced_accuracy")
+    assert [m.step for m in history] == [50, 100]
+    assert [m.value for m in history] == list(table["balanced_accuracy"])
+    sizes = mlflow.MlflowClient().get_metric_history(run.info.run_id, "train_n_images")
+    assert [m.value for m in sizes] == list(table["n_images"])
