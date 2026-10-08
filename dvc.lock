@@ -3,10 +3,18 @@ stages:
   download:
     cmd: python -m mlops_vera.dataset
     deps:
+    - path: mlops_vera/config.py
+      hash: md5
+      md5: e4ab3df7df83b24b22e9c8ddc5c00710
+      size: 1556
     - path: mlops_vera/dataset.py
       hash: md5
-      md5: dc62d5ddc0acd17e5b260684533a6694
-      size: 5307
+      md5: e7df553bd76511fcb16f1685c079e9b1
+      size: 6393
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
     params:
       params.yaml:
         data:
@@ -29,10 +37,18 @@ stages:
       md5: 0ae7bdd3d32154856d0562ea1eb554a5.dir
       size: 609772333
       nfiles: 7736
+    - path: mlops_vera/config.py
+      hash: md5
+      md5: e4ab3df7df83b24b22e9c8ddc5c00710
+      size: 1556
     - path: mlops_vera/features.py
       hash: md5
-      md5: f8f952ff0c2cabc072ff4d1a4df50506
-      size: 1901
+      md5: 5bac0ee3faa863c079aa31fd3d0751a5
+      size: 3129
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
     params:
       params.yaml:
         preprocess:
@@ -52,10 +68,18 @@ stages:
       md5: 67f99c4b31dcf1f9701d4937ef738fa2.dir
       size: 131333034
       nfiles: 7735
+    - path: mlops_vera/config.py
+      hash: md5
+      md5: e4ab3df7df83b24b22e9c8ddc5c00710
+      size: 1556
     - path: mlops_vera/split.py
       hash: md5
-      md5: 645afbf0672994e3e7a20dc1e8cbf290
-      size: 2614
+      md5: 72b4f1f28779ec6244ee1bee1283f1c9
+      size: 3081
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
     params:
       params.yaml:
         split:
@@ -86,10 +110,18 @@ stages:
       md5: d251caf379d9996e995eee59ff9983b0.dir
       size: 1074722
       nfiles: 3
+    - path: mlops_vera/config.py
+      hash: md5
+      md5: e4ab3df7df83b24b22e9c8ddc5c00710
+      size: 1556
     - path: mlops_vera/modeling/embed.py
       hash: md5
-      md5: e981dc978338fb127db6cdae045f18ae
-      size: 5769
+      md5: 26d2f95e67ad3223bf041c37edda30b0
+      size: 6663
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
     params:
       params.yaml:
         embed:
@@ -109,10 +141,18 @@ stages:
       md5: 7555c32ba49cc55ecfe988caa564b3ad.dir
       size: 16956065
       nfiles: 4
+    - path: mlops_vera/config.py
+      hash: md5
+      md5: e4ab3df7df83b24b22e9c8ddc5c00710
+      size: 1556
     - path: mlops_vera/modeling/train.py
       hash: md5
-      md5: 3927673c05d9fe8b602a9c2ec9ac57f5
-      size: 8339
+      md5: 6d9f2915a971d167e6f495054aec8692
+      size: 7796
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
     params:
       params.yaml:
         train:
@@ -129,3 +169,344 @@ stages:
       hash: md5
       md5: 70567dd84ceb507946078d701c0e18fe
       size: 932
+  logo@sd21:
+    cmd: python -m mlops_vera.modeling.logo sd21
+    deps:
+    - path: data/processed/embeddings
+      hash: md5
+      md5: 7555c32ba49cc55ecfe988caa564b3ad.dir
+      size: 16956065
+      nfiles: 4
+    - path: data/processed/splits
+      hash: md5
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
+      nfiles: 3
+    - path: mlops_vera/config.py
+      hash: md5
+      md5: e4ab3df7df83b24b22e9c8ddc5c00710
+      size: 1556
+    - path: mlops_vera/modeling/captions.py
+      hash: md5
+      md5: f2fcd746d07d22d50c4bce8a0ec01987
+      size: 776
+    - path: mlops_vera/modeling/logo.py
+      hash: md5
+      md5: 8e1cb775766bb1183e7c8106644542a9
+      size: 6116
+    - path: mlops_vera/modeling/train.py
+      hash: md5
+      md5: 6d9f2915a971d167e6f495054aec8692
+      size: 7796
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
+    params:
+      params.yaml:
+        logo.n_bootstrap: 1000
+        logo.seed: 42
+        train:
+          C: 0.01
+          class_weight: balanced
+          max_iter: 1000
+          seed: 42
+    outs:
+    - path: reports/metrics/logo/sd21.json
+      hash: md5
+      md5: e978194e8bf72c74cc7b4428ea1d3ff1
+      size: 872
+  logo@sdxl:
+    cmd: python -m mlops_vera.modeling.logo sdxl
+    deps:
+    - path: data/processed/embeddings
+      hash: md5
+      md5: 7555c32ba49cc55ecfe988caa564b3ad.dir
+      size: 16956065
+      nfiles: 4
+    - path: data/processed/splits
+      hash: md5
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
+      nfiles: 3
+    - path: mlops_vera/config.py
+      hash: md5
+      md5: e4ab3df7df83b24b22e9c8ddc5c00710
+      size: 1556
+    - path: mlops_vera/modeling/captions.py
+      hash: md5
+      md5: f2fcd746d07d22d50c4bce8a0ec01987
+      size: 776
+    - path: mlops_vera/modeling/logo.py
+      hash: md5
+      md5: 8e1cb775766bb1183e7c8106644542a9
+      size: 6116
+    - path: mlops_vera/modeling/train.py
+      hash: md5
+      md5: 6d9f2915a971d167e6f495054aec8692
+      size: 7796
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
+    params:
+      params.yaml:
+        logo.n_bootstrap: 1000
+        logo.seed: 42
+        train:
+          C: 0.01
+          class_weight: balanced
+          max_iter: 1000
+          seed: 42
+    outs:
+    - path: reports/metrics/logo/sdxl.json
+      hash: md5
+      md5: 54f6f3afae6e547796f15ca224c501b4
+      size: 871
+  logo@sd3:
+    cmd: python -m mlops_vera.modeling.logo sd3
+    deps:
+    - path: data/processed/embeddings
+      hash: md5
+      md5: 7555c32ba49cc55ecfe988caa564b3ad.dir
+      size: 16956065
+      nfiles: 4
+    - path: data/processed/splits
+      hash: md5
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
+      nfiles: 3
+    - path: mlops_vera/config.py
+      hash: md5
+      md5: e4ab3df7df83b24b22e9c8ddc5c00710
+      size: 1556
+    - path: mlops_vera/modeling/captions.py
+      hash: md5
+      md5: f2fcd746d07d22d50c4bce8a0ec01987
+      size: 776
+    - path: mlops_vera/modeling/logo.py
+      hash: md5
+      md5: 8e1cb775766bb1183e7c8106644542a9
+      size: 6116
+    - path: mlops_vera/modeling/train.py
+      hash: md5
+      md5: 6d9f2915a971d167e6f495054aec8692
+      size: 7796
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
+    params:
+      params.yaml:
+        logo.n_bootstrap: 1000
+        logo.seed: 42
+        train:
+          C: 0.01
+          class_weight: balanced
+          max_iter: 1000
+          seed: 42
+    outs:
+    - path: reports/metrics/logo/sd3.json
+      hash: md5
+      md5: fd591cf3fd4c3b8fb13717d6042d2b47
+      size: 866
+  logo@dalle3:
+    cmd: python -m mlops_vera.modeling.logo dalle3
+    deps:
+    - path: data/processed/embeddings
+      hash: md5
+      md5: 7555c32ba49cc55ecfe988caa564b3ad.dir
+      size: 16956065
+      nfiles: 4
+    - path: data/processed/splits
+      hash: md5
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
+      nfiles: 3
+    - path: mlops_vera/config.py
+      hash: md5
+      md5: e4ab3df7df83b24b22e9c8ddc5c00710
+      size: 1556
+    - path: mlops_vera/modeling/captions.py
+      hash: md5
+      md5: f2fcd746d07d22d50c4bce8a0ec01987
+      size: 776
+    - path: mlops_vera/modeling/logo.py
+      hash: md5
+      md5: 8e1cb775766bb1183e7c8106644542a9
+      size: 6116
+    - path: mlops_vera/modeling/train.py
+      hash: md5
+      md5: 6d9f2915a971d167e6f495054aec8692
+      size: 7796
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
+    params:
+      params.yaml:
+        logo.n_bootstrap: 1000
+        logo.seed: 42
+        train:
+          C: 0.01
+          class_weight: balanced
+          max_iter: 1000
+          seed: 42
+    outs:
+    - path: reports/metrics/logo/dalle3.json
+      hash: md5
+      md5: 76d9cff810b0067b9c38939021f745a6
+      size: 872
+  logo@midjourney:
+    cmd: python -m mlops_vera.modeling.logo midjourney
+    deps:
+    - path: data/processed/embeddings
+      hash: md5
+      md5: 7555c32ba49cc55ecfe988caa564b3ad.dir
+      size: 16956065
+      nfiles: 4
+    - path: data/processed/splits
+      hash: md5
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
+      nfiles: 3
+    - path: mlops_vera/config.py
+      hash: md5
+      md5: e4ab3df7df83b24b22e9c8ddc5c00710
+      size: 1556
+    - path: mlops_vera/modeling/captions.py
+      hash: md5
+      md5: f2fcd746d07d22d50c4bce8a0ec01987
+      size: 776
+    - path: mlops_vera/modeling/logo.py
+      hash: md5
+      md5: 8e1cb775766bb1183e7c8106644542a9
+      size: 6116
+    - path: mlops_vera/modeling/train.py
+      hash: md5
+      md5: 6d9f2915a971d167e6f495054aec8692
+      size: 7796
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
+    params:
+      params.yaml:
+        logo.n_bootstrap: 1000
+        logo.seed: 42
+        train:
+          C: 0.01
+          class_weight: balanced
+          max_iter: 1000
+          seed: 42
+    outs:
+    - path: reports/metrics/logo/midjourney.json
+      hash: md5
+      md5: 23bb55e7477bf6252ab7dcac1c0e7f79
+      size: 870
+  logo_summary:
+    cmd: python -m mlops_vera.modeling.logo_summary
+    deps:
+    - path: mlops_vera/config.py
+      hash: md5
+      md5: e4ab3df7df83b24b22e9c8ddc5c00710
+      size: 1556
+    - path: mlops_vera/modeling/logo_summary.py
+      hash: md5
+      md5: 468ec999faf2b4d9dd75f50dcf83ce96
+      size: 3364
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
+    - path: reports/metrics/logo/dalle3.json
+      hash: md5
+      md5: 76d9cff810b0067b9c38939021f745a6
+      size: 872
+    - path: reports/metrics/logo/midjourney.json
+      hash: md5
+      md5: 23bb55e7477bf6252ab7dcac1c0e7f79
+      size: 870
+    - path: reports/metrics/logo/sd21.json
+      hash: md5
+      md5: e978194e8bf72c74cc7b4428ea1d3ff1
+      size: 872
+    - path: reports/metrics/logo/sd3.json
+      hash: md5
+      md5: fd591cf3fd4c3b8fb13717d6042d2b47
+      size: 866
+    - path: reports/metrics/logo/sdxl.json
+      hash: md5
+      md5: 54f6f3afae6e547796f15ca224c501b4
+      size: 871
+    params:
+      params.yaml:
+        logo.holdout:
+        - sd21
+        - sdxl
+        - sd3
+        - dalle3
+        - midjourney
+        logo.target_balanced_accuracy: 0.7
+    outs:
+    - path: reports/metrics/logo_summary.json
+      hash: md5
+      md5: d309fb9a06e3d2fcd3c09987036b3af8
+      size: 179
+    - path: reports/metrics/logo_table.csv
+      hash: md5
+      md5: 8d6d14c2ebbdeee30069d9fe30541acc
+      size: 1017
+  learning_curve:
+    cmd: python -m mlops_vera.modeling.learning_curve
+    deps:
+    - path: data/processed/embeddings
+      hash: md5
+      md5: 7555c32ba49cc55ecfe988caa564b3ad.dir
+      size: 16956065
+      nfiles: 4
+    - path: data/processed/splits
+      hash: md5
+      md5: d251caf379d9996e995eee59ff9983b0.dir
+      size: 1074722
+      nfiles: 3
+    - path: mlops_vera/config.py
+      hash: md5
+      md5: e4ab3df7df83b24b22e9c8ddc5c00710
+      size: 1556
+    - path: mlops_vera/modeling/captions.py
+      hash: md5
+      md5: f2fcd746d07d22d50c4bce8a0ec01987
+      size: 776
+    - path: mlops_vera/modeling/learning_curve.py
+      hash: md5
+      md5: 249d4a7b164b0b55513e08d233b88bcf
+      size: 4719
+    - path: mlops_vera/modeling/train.py
+      hash: md5
+      md5: 6d9f2915a971d167e6f495054aec8692
+      size: 7796
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
+    params:
+      params.yaml:
+        learning_curve:
+          fractions:
+          - 0.1
+          - 0.25
+          - 0.5
+          - 0.75
+          - 1.0
+          n_seeds: 5
+        train:
+          C: 0.01
+          class_weight: balanced
+          max_iter: 1000
+          seed: 42
+    outs:
+    - path: reports/metrics/learning_curve.csv
+      hash: md5
+      md5: 243c4450837a523914dfe8acabb7a82e
+      size: 948

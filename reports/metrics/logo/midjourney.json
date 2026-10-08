@@ -1,0 +1,30 @@
+{
+  "holdout": "midjourney",
+  "threshold": 0.5114789009094238,
+  "n_unseen": {
+    "real": 188,
+    "ai": 188
+  },
+  "val": {
+    "balanced_accuracy": 0.937799043062201,
+    "f1_macro": 0.9124904102780209,
+    "roc_auc": 0.9838087497996841,
+    "pr_auc_real": 0.9484516343420536,
+    "recall_real": 0.9330143540669856,
+    "recall_ai": 0.9425837320574163,
+    "recall_sd21": 0.8899521531100478,
+    "recall_sdxl": 0.9665071770334929,
+    "recall_sd3": 0.9282296650717703,
+    "recall_dalle3": 0.9856459330143541
+  },
+  "unseen": {
+    "balanced_accuracy": 0.9148936170212766,
+    "f1_macro": 0.9148839841539331,
+    "roc_auc": 0.9682831598008148,
+    "pr_auc_real": 0.968280441027849,
+    "recall_real": 0.925531914893617,
+    "recall_ai": 0.9042553191489362,
+    "balanced_accuracy_ci_low": 0.8801020408163265,
+    "balanced_accuracy_ci_high": 0.9479279891304349
+  }
+}

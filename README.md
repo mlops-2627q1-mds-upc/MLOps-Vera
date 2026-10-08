@@ -54,10 +54,78 @@ Based on [Cookiecutter Data Science](https://cookiecutter-data-science.drivendat
 └── Makefile               # make requirements | data | train | test | lint
 ```
 
+## Getting the data (DVC)
+
+The data, the intermediate outputs and the trained model are versioned with **DVC**. Git stores the
+pipeline (`dvc.yaml`), its parameters (`params.yaml`) and the fingerprint of every output
+(`dvc.lock`); the files themselves are in the DVC remote on DagsHub
+(`https://dagshub.com/AdriSegurao/MLOps-Vera.dvc`, set in `.dvc/config`).
+
+| Stage | What it does | Output |
+| --- | --- | --- |
+| `download` | Caption-grouped subsample of Defactify (800 captions → 7,734 images), pinned to a fixed dataset revision | `data/raw/defactify` (~610 MB) |
+| `preprocess` | Centre-crop, resize to 224 px and re-encode as JPEG | `data/processed/defactify_224` (~130 MB) |
+| `split` | 70/15/15 train/val/test split grouped by caption | `data/processed/splits` |
+| `embed` | Frozen CLIP ViT-B/32 embedding of every image | `data/processed/embeddings` (~17 MB) |
+| `train` | Logistic-regression head on the embeddings | `models/classifier.joblib` |
+| `logo@<generator>`, `logo_summary` | Leave-one-generator-out evaluation | metrics only |
+
+### One-time access setup
+
+The DagsHub repository is public, but DagsHub only serves DVC data to signed-in users. Create a
+free DagsHub account (signing in with GitHub works) and an access token (DagsHub → User settings →
+Tokens), then store them locally; both files are git-ignored:
+
+```bash
+uv run dvc remote modify origin --local auth basic
+uv run dvc remote modify origin --local user <dagshub-username>
+uv run dvc remote modify origin --local password <dagshub-token>
+cp .env.example .env   # MLflow: fill in the same username and token
+```
+
+Use the same token in `.dvc/config.local` and `.env`. If `dvc pull` reports missing files while
+MLflow works, the DVC token is the usual cause: DVC reports a rejected login as missing files.
+
+### Pulling and reproducing
+
+```bash
+uv run dvc pull                            # everything (~760 MB): data, embeddings and model
+uv run dvc pull data/processed/embeddings data/processed/splits  # enough to re-train or evaluate the head (~18 MB)
+uv run dvc status                          # "Data and pipelines are up to date" = matches dvc.lock
+uv run dvc repro                           # re-runs only the stages whose code, params or inputs changed
+```
+
+`dvc pull` downloads the exact files the pipeline produced, so nothing is re-trained. `dvc repro`
+rebuilds outputs from Hugging Face and the code; after changing something, run `uv run dvc push`
+and commit the updated `dvc.lock`. The amount of data is the `data.n_captions` parameter: change it
+and run `dvc repro` to build a larger version, while DVC keeps both versions.
+
+### Is the subsample large enough?
+
+The `learning_curve` stage re-trains the selected head on growing fractions of the training
+captions (5 random draws per fraction) and evaluates each fit on the validation split:
+
+| Training captions | Images (real) | Balanced acc. | ROC-AUC | PR-AUC (real) |
+| --- | --- | --- | --- | --- |
+| 10% | 515 (86) | 0.905 | 0.964 | 0.876 |
+| 25% | 1,250 (208) | 0.925 | 0.977 | 0.914 |
+| 50% | 2,712 (452) | 0.929 | 0.978 | 0.919 |
+| 75% | 4,060 (677) | 0.931 | 0.981 | 0.930 |
+| 100% | 5,352 (892) | 0.935 | 0.982 | 0.933 |
+
+The curve flattens early: four times more data (25% to 100%) adds about one point of balanced
+accuracy, less than the noise of the validation set (±2 points). More captions would mainly give
+larger test sets and narrower confidence intervals, not a better model.
+
+```bash
+uv run dvc repro learning_curve   # re-run it (seconds, reuses the embeddings)
+uv run dvc plots show             # line chart of the curve (dvc_plots/index.html)
+```
+
 ## Experiment tracking (MLflow)
 
-Training runs are logged with **MLflow** to the tracking server hosted by DagsHub:
-<https://dagshub.com/AdriSegurao/MLOps-Vera.mlflow>.
+Every stage of the DVC pipeline logs a run with **MLflow** to the tracking server hosted by
+DagsHub: <https://dagshub.com/AdriSegurao/MLOps-Vera.mlflow>.
 
 ```bash
 cp .env.example .env   # then fill in your DagsHub username and access token
@@ -65,6 +133,18 @@ cp .env.example .env   # then fill in your DagsHub username and access token
 
 `.env` is git-ignored and loaded automatically by `mlops_vera/config.py`. Without it, runs are
 logged locally to `./mlflow.db` (browse them with `uv run mlflow ui`).
+
+| Experiment | Stages | What each run records |
+| --- | --- | --- |
+| `vera-data` | `download`, `preprocess`, `split`, `embed` | sample size and class balance, resolved dataset sha, an example caption group after preprocessing, per-split counts, embedding dimension and throughput |
+| `vera-baselines` | `train` | see [Running experiments](#running-experiments) |
+| `vera-logo` | `logo@<generator>`, `logo_summary` | val and unseen-generator metrics with bootstrap CI; mean and worst case against MR-4, with a chart |
+| `vera-learning-curve` | `learning_curve` | validation metrics per training-caption percentage (one MLflow step each), with a chart |
+
+Each run logs its section of `params.yaml` as params, and all share the same lineage tags:
+`dvc.stage` (the stage address, e.g. `logo@sd3`), `data_revision`, the DVC hash of every input
+(`<input>_md5`, read from `dvc.lock`), `dvc.exp_name` when run by `dvc exp run -n <name>`, and
+the Git commit (added by MLflow). The helpers live in `mlops_vera/tracking.py`.
 
 ### Running experiments
 
@@ -121,12 +201,50 @@ overfits the embeddings (train ROC-AUC 1.000):
 | 0.1 | 0.919 | 0.871 | 0.910 | 0.919 | 0.999 / 0.976 | 0.707 |
 | 0.03 | 0.931 | 0.877 | 0.924 | 0.943 | 0.999 / 0.980 | 0.688 |
 | **0.01** | **0.935** | **0.884** | **0.933** | 0.947 | 0.998 / 0.982 | 0.570 |
+| 0.003 | 0.937 | 0.887 | 0.937 | 0.947 | 0.995 / 0.984 | 0.509 |
+| 0.001 | 0.935 | 0.900 | 0.937 | 0.928 | 0.992 / 0.984 | 0.427 |
+
+Since C = 0.01 was the smallest value of the first sweep, the sweep was extended to 0.003 and
+0.001. Below 0.01 the metrics level off: balanced accuracy changes by at most 0.002, far below the
+noise of the validation split (±2 points with 209 real images), so C = 0.01 is kept rather than
+picking a winner by noise. Every value of the sweep is stored as a DVC experiment
+(`clip-vit-b-32-balanced-C<C>`; `uv run dvc exp pull origin <name>`, then `uv run dvc exp show -A`).
 
 CLIP ViT-B/32 with balanced class weights and C = 0.01 is the selected model (current
 `params.yaml`): class weighting keeps the head robust to other class ratios in future training
 data, and the tuned threshold (0.57) is saved inside the model, so both the joblib bundle and
 the MLflow model classify with it. See the [model card](docs/model_card.md) and the report for
 the analysis.
+
+### Cross-generator generalisation (leave-one-generator-out)
+
+Requirement MR-4 asks how the detector copes with a generator it has never seen, the drift we
+expect in production. The `logo` stage is a DVC `foreach` with one branch per generator listed in
+`params.yaml` (`logo.holdout`): `logo@sd3` trains the selected head without any SD 3 image in
+train or val (threshold tuning included), then tests it on the real images of the test split plus
+the SD 3 images only. All branches reuse the embeddings, so each one takes seconds, and DVC only
+re-runs the branches whose inputs changed. `logo_summary` joins them into one table and checks the
+target (balanced accuracy ≥ 0.70) on the worst generator:
+
+```bash
+uv run dvc repro logo_summary   # or a single branch: uv run dvc repro logo@sd3
+uv run dvc metrics show         # per-generator metrics and the summary
+uv run dvc plots show           # bar chart of the unseen balanced accuracy (dvc_plots/index.html)
+```
+
+Each branch is also an MLflow run (`<backbone>-logo-<generator>`, experiment `vera-logo`).
+
+| Held-out generator | Balanced acc. (95% CI) | Recall of the unseen generator | Recall (real) |
+| --- | --- | --- | --- |
+| SD 2.1 | 0.872 (0.827–0.914) | 0.814 | 0.931 |
+| SDXL | 0.957 (0.936–0.977) | 0.984 | 0.931 |
+| **SD 3** | **0.822 (0.765–0.872)** | **0.670** | 0.973 |
+| DALL·E 3 | 0.923 (0.884–0.956) | 0.920 | 0.926 |
+| MidJourney | 0.915 (0.880–0.948) | 0.904 | 0.926 |
+
+Mean 0.898, worst 0.822 (SD 3): MR-4 is met. Each test set has 188 real and 188 generated images
+from 120 captions; the 95% bootstrap CI resamples whole captions, since images of the same caption
+show the same scene and their errors are correlated.
 
 ## Team
 

@@ -22,7 +22,7 @@ metrics:
 > Team **Vera** — *Machine Learning Systems in Production (MLOps)*, UPC 2026–2027.
 > Structure follows Mitchell et al. (2019), *Model Cards for Model Reporting*.
 >
-> **Status:** Milestone 2 baseline selected (v0.1). Results below are on the **validation** split; the held-out test evaluation and the leave-one-generator-out study are completed in Milestone 3.
+> **Status:** Milestone 2 baseline selected (v0.1). Results below are on the **validation** split, plus the leave-one-generator-out study; the held-out test evaluation is completed in Milestone 3.
 
 ## Model details
 
@@ -69,7 +69,19 @@ Validation results of the selected model (test-set results follow in Milestone 3
 
 Recall per generator (share of its images flagged as AI): SD 2.1 0.876, SDXL 0.971, **SD 3 0.847**, DALL·E 3 0.981, MidJourney 0.943. SD 3 is the hardest generator for every backbone tried.
 
-Compared with the ResNet baselines (validation balanced accuracy 0.80–0.82), the CLIP encoder is about 10 points better and overfits less (train/val balanced accuracy 0.96/0.92 vs 0.96/0.82 for ResNet-50). With C = 1 the CLIP head still overfits (train ROC-AUC 1.00 vs 0.97 on validation); stronger regularisation (C = 0.01) narrows the gap (0.998 vs 0.982) and adds about 2 points of balanced accuracy and 4 of PR-AUC. The leave-one-generator-out drift experiment (cross-generator target ≥ 0.70) is pending.
+Compared with the ResNet baselines (validation balanced accuracy 0.80–0.82), the CLIP encoder is about 10 points better and overfits less (train/val balanced accuracy 0.96/0.92 vs 0.96/0.82 for ResNet-50). With C = 1 the CLIP head still overfits (train ROC-AUC 1.00 vs 0.97 on validation); stronger regularisation (C = 0.01) narrows the gap (0.998 vs 0.982) and adds about 2 points of balanced accuracy and 4 of PR-AUC. Extending the sweep to C = 0.003 and 0.001 changes balanced accuracy by at most 0.002, well within the validation noise, so C = 0.01 is kept.
+
+**Cross-generator generalisation (leave-one-generator-out, MR-4).** For each generator, the same head is trained without it (train and val, threshold tuning included) and tested on the test split's real images plus that generator's images only (188 + 188 images from 120 captions). The 95% bootstrap CI resamples whole captions, since images of the same caption show the same scene and their errors are correlated:
+
+| Held-out generator | Balanced accuracy | Recall of the unseen generator | Recall (real) |
+| --- | --- | --- | --- |
+| SD 2.1 | 0.872 (0.827–0.914) | 0.814 | 0.931 |
+| SDXL | 0.957 (0.936–0.977) | 0.984 | 0.931 |
+| **SD 3** | **0.822 (0.765–0.872)** | **0.670** | 0.973 |
+| DALL·E 3 | 0.923 (0.884–0.956) | 0.920 | 0.926 |
+| MidJourney | 0.915 (0.880–0.948) | 0.904 | 0.926 |
+
+The worst case (SD 3, 0.822) meets the cross-generator target (≥ 0.70); the mean is 0.898. The drop is concentrated in the generated class: real images stay well recognised, but an unseen SD 3 image is detected only 67% of the time, against 85% on validation when SD 3 is part of training. SD 2.1 also drops, while SDXL, DALL·E 3 and MidJourney stay close to the in-distribution results, so their artefacts seem to be shared with the other generators.
 
 ## Ethical considerations
 
@@ -77,4 +89,4 @@ Dual-use: false positives may wrongly flag genuine images, so outputs are adviso
 
 ## Caveats & recommendations
 
-Guard against the aspect-ratio/format shortcut; expect accuracy to drop on unseen or newer generators (monitor drift and retrain as needed); the model is trained on modest-resolution, COCO-domain images and should not be assumed to transfer out-of-domain.
+Guard against the aspect-ratio/format shortcut; expect accuracy to drop on unseen or newer generators, as the leave-one-generator-out study shows for SD 3 (monitor drift and retrain as needed); the model is trained on modest-resolution, COCO-domain images and should not be assumed to transfer out-of-domain.

@@ -1,18 +1,21 @@
 """DVC stage `split`: caption-grouped train/val/test split (requirement DR-4).
 
 The original Defactify splits share captions (leakage found in the EDA), so we re-split:
-all images generated from the same caption go to the same split.
+all images generated from the same caption go to the same split. The size and class balance of
+each split are written as DVC metrics and logged to MLflow (experiment `vera-data`).
 """
 
 import json
 from pathlib import Path
 
 from loguru import logger
+import mlflow
 import numpy as np
 import pandas as pd
 import typer
 
 from mlops_vera.config import METRICS_DIR, PREPROCESSED_DIR, SPLITS_DIR, load_params
+from mlops_vera.tracking import flatten, stage_run
 
 app = typer.Typer()
 SPLITS = ("train", "val", "test")
@@ -47,7 +50,12 @@ def summarise(meta: pd.DataFrame) -> dict:
 
 
 @app.command()
-def main(input_dir: Path = PREPROCESSED_DIR, output_dir: Path = SPLITS_DIR):
+def main(
+    input_dir: Path = PREPROCESSED_DIR,
+    output_dir: Path = SPLITS_DIR,
+    metrics_path: Path = METRICS_DIR / "split_summary.json",
+    experiment: str = "vera-data",
+):
     p = load_params("split")
     assert abs(p["train"] + p["val"] + p["test"] - 1) < 1e-9, "split fractions must sum to 1"
     meta = caption_grouped_split(pd.read_csv(input_dir / "metadata.csv"), p, p["seed"])
@@ -64,9 +72,13 @@ def main(input_dir: Path = PREPROCESSED_DIR, output_dir: Path = SPLITS_DIR):
             output_dir / f"{name}.csv", index=False, lineterminator="\n"
         )
 
-    METRICS_DIR.mkdir(parents=True, exist_ok=True)
+    metrics_path.parent.mkdir(parents=True, exist_ok=True)
     summary = summarise(meta)
-    (METRICS_DIR / "split_summary.json").write_text(json.dumps(summary, indent=2), newline="\n")
+    metrics_path.write_text(json.dumps(summary, indent=2), newline="\n")
+
+    with stage_run("split", experiment, inputs=("data/processed/defactify_224",)):
+        mlflow.log_params({f"split.{k}": v for k, v in p.items()})
+        mlflow.log_metrics(flatten(summary))
     logger.success(f"Splits written to {output_dir}: {summary}")
 
 

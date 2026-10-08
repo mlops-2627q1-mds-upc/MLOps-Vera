@@ -1,0 +1,30 @@
+{
+  "holdout": "sd21",
+  "threshold": 0.46608322858810425,
+  "n_unseen": {
+    "real": 188,
+    "ai": 188
+  },
+  "val": {
+    "balanced_accuracy": 0.94377990430622,
+    "f1_macro": 0.9181361902600841,
+    "roc_auc": 0.9854170005265448,
+    "pr_auc_real": 0.9470239747460903,
+    "recall_real": 0.9425837320574163,
+    "recall_ai": 0.9449760765550239,
+    "recall_sdxl": 0.9617224880382775,
+    "recall_sd3": 0.8803827751196173,
+    "recall_dalle3": 0.9856459330143541,
+    "recall_midjourney": 0.9521531100478469
+  },
+  "unseen": {
+    "balanced_accuracy": 0.8723404255319149,
+    "f1_macro": 0.8719018822928201,
+    "roc_auc": 0.9576448619284744,
+    "pr_auc_real": 0.9596241399631872,
+    "recall_real": 0.9308510638297872,
+    "recall_ai": 0.8138297872340425,
+    "balanced_accuracy_ci_low": 0.8273746200607902,
+    "balanced_accuracy_ci_high": 0.9140802556818182
+  }
+}

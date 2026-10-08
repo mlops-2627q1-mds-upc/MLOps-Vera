@@ -1,0 +1,30 @@
+{
+  "holdout": "sdxl",
+  "threshold": 0.5533205270767212,
+  "n_unseen": {
+    "real": 188,
+    "ai": 188
+  },
+  "val": {
+    "balanced_accuracy": 0.9324162679425838,
+    "f1_macro": 0.8944789121748242,
+    "roc_auc": 0.9807410544630388,
+    "pr_auc_real": 0.939759979927157,
+    "recall_real": 0.9425837320574163,
+    "recall_ai": 0.9222488038277512,
+    "recall_sd21": 0.8708133971291866,
+    "recall_sd3": 0.8803827751196173,
+    "recall_dalle3": 0.9856459330143541,
+    "recall_midjourney": 0.9521531100478469
+  },
+  "unseen": {
+    "balanced_accuracy": 0.9574468085106382,
+    "f1_macro": 0.9574166879016959,
+    "roc_auc": 0.9917383431416931,
+    "pr_auc_real": 0.9928287457127489,
+    "recall_real": 0.9308510638297872,
+    "recall_ai": 0.9840425531914894,
+    "balanced_accuracy_ci_low": 0.936109496124031,
+    "balanced_accuracy_ci_high": 0.9772784090909091
+  }
+}

@@ -3,6 +3,8 @@ stages:
     cmd: python -m mlops_vera.dataset
     deps:
       - mlops_vera/dataset.py
+      - mlops_vera/config.py
+      - mlops_vera/tracking.py
     params:
       - data
     outs:
@@ -12,6 +14,8 @@ stages:
     cmd: python -m mlops_vera.features
     deps:
       - mlops_vera/features.py
+      - mlops_vera/config.py
+      - mlops_vera/tracking.py
       - data/raw/defactify
     params:
       - preprocess
@@ -22,6 +26,8 @@ stages:
     cmd: python -m mlops_vera.split
     deps:
       - mlops_vera/split.py
+      - mlops_vera/config.py
+      - mlops_vera/tracking.py
       - data/processed/defactify_224
     params:
       - split
@@ -35,6 +41,8 @@ stages:
     cmd: python -m mlops_vera.modeling.embed
     deps:
       - mlops_vera/modeling/embed.py
+      - mlops_vera/config.py
+      - mlops_vera/tracking.py
       - data/processed/defactify_224
       - data/processed/splits
     params:
@@ -46,6 +54,8 @@ stages:
     cmd: python -m mlops_vera.modeling.train
     deps:
       - mlops_vera/modeling/train.py
+      - mlops_vera/config.py
+      - mlops_vera/tracking.py
       - data/processed/embeddings
     params:
       - train
@@ -54,3 +64,72 @@ stages:
     metrics:
       - reports/metrics/train_metrics.json:
           cache: false
+
+  # Leave-one-generator-out (MR-4): one stage per held-out generator, e.g. `dvc repro logo@sd3`.
+  # Reuses the embeddings, so only the affected branches re-run when a param or script changes.
+  logo:
+    foreach: ${logo.holdout}
+    do:
+      cmd: python -m mlops_vera.modeling.logo ${item}
+      deps:
+        - mlops_vera/modeling/logo.py
+        - mlops_vera/config.py
+        - mlops_vera/tracking.py
+        - mlops_vera/modeling/train.py
+        - mlops_vera/modeling/captions.py
+        - data/processed/embeddings
+        - data/processed/splits  # captions, for the caption-level bootstrap
+      params:
+        - train
+        - logo.n_bootstrap
+        - logo.seed
+      metrics:
+        - reports/metrics/logo/${item}.json:
+            cache: false
+
+  logo_summary:
+    cmd: python -m mlops_vera.modeling.logo_summary
+    deps:
+      - mlops_vera/modeling/logo_summary.py
+      - mlops_vera/config.py
+      - mlops_vera/tracking.py
+      - reports/metrics/logo/sd21.json
+      - reports/metrics/logo/sdxl.json
+      - reports/metrics/logo/sd3.json
+      - reports/metrics/logo/dalle3.json
+      - reports/metrics/logo/midjourney.json
+    params:
+      - logo.holdout
+      - logo.target_balanced_accuracy
+    metrics:
+      - reports/metrics/logo_summary.json:
+          cache: false
+    plots:
+      - reports/metrics/logo_table.csv:
+          cache: false
+          template: bar_horizontal
+          x: balanced_accuracy
+          y: holdout
+          title: Balanced accuracy on an unseen generator (leave-one-generator-out)
+
+  # Is the subsample large enough? Re-trains the `train` head on growing caption fractions.
+  learning_curve:
+    cmd: python -m mlops_vera.modeling.learning_curve
+    deps:
+      - mlops_vera/modeling/learning_curve.py
+      - mlops_vera/config.py
+      - mlops_vera/tracking.py
+      - mlops_vera/modeling/train.py
+      - mlops_vera/modeling/captions.py
+      - data/processed/embeddings
+      - data/processed/splits
+    params:
+      - train
+      - learning_curve
+    plots:
+      - reports/metrics/learning_curve.csv:
+          cache: false
+          template: linear
+          x: n_images
+          y: balanced_accuracy
+          title: Validation balanced accuracy vs. training images (learning curve)

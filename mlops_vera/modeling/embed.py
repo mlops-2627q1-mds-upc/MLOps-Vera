@@ -15,13 +15,16 @@ the images again.
 
 Images are already centre-cropped and resized by `preprocess`, so only tensor conversion and the
 backbone's normalisation are applied here. `build_backbone` + `image_transform` must be reused at
-serving time (requirement FR-5).
+serving time (requirement FR-5). The run is logged to MLflow (experiment `vera-data`) with the
+embedding throughput on this machine, a first estimate of the serving latency.
 """
 
 import json
 from pathlib import Path
+import time
 
 from loguru import logger
+import mlflow
 import numpy as np
 import open_clip
 import pandas as pd
@@ -35,6 +38,7 @@ from tqdm import tqdm
 import typer
 
 from mlops_vera.config import EMBEDDINGS_DIR, PREPROCESSED_DIR, SPLITS_DIR, load_params
+from mlops_vera.tracking import flatten, stage_run
 
 app = typer.Typer()
 SPLITS = ("train", "val", "test")
@@ -125,6 +129,7 @@ def main(
     splits_dir: Path = SPLITS_DIR,
     output_dir: Path = EMBEDDINGS_DIR,
     num_workers: int = 2,
+    experiment: str = "vera-data",
 ):
     p = load_params("embed")
     model, weights = build_backbone(p["backbone"])
@@ -133,6 +138,7 @@ def main(
 
     output_dir.mkdir(parents=True, exist_ok=True)
     info = {"backbone": p["backbone"], "weights": weights, "n_images": {}}
+    start = time.perf_counter()
     for split in SPLITS:
         meta = pd.read_csv(splits_dir / f"{split}.csv")
         paths = [images_dir / f for f in meta["file"]]
@@ -145,9 +151,19 @@ def main(
             image_id=meta["image_id"].to_numpy(dtype=str),
         )
         info["n_images"][split] = len(meta)
+    seconds = time.perf_counter() - start
     info["dim"] = int(X.shape[1])
 
     (output_dir / "info.json").write_text(json.dumps(info, indent=2), newline="\n")
+
+    inputs = ("data/processed/defactify_224", "data/processed/splits")
+    with stage_run("embed", experiment, p["backbone"], inputs=inputs):
+        mlflow.log_params({f"embed.{k}": v for k, v in p.items()} | {"num_workers": num_workers})
+        mlflow.set_tag("backbone_weights", weights)
+        mlflow.log_metrics(flatten({"n_images": info["n_images"]}) | {"dim": info["dim"]})
+        n_images = sum(info["n_images"].values())
+        mlflow.log_metrics({"seconds": seconds, "images_per_second": n_images / seconds})
+        mlflow.log_dict(info, "info.json")
     logger.success(f"Embeddings ({info['dim']}-d) written to {output_dir}: {info['n_images']}")
 
 

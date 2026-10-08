@@ -31,11 +31,29 @@ embed:
 
 train:
   # Logistic-regression head fitted on the frozen embeddings.
-  # Inverse L2 regularisation strength. Chosen with a sweep over 0.01-1: C = 1 overfits the
-  # 512-d CLIP embeddings (train ROC-AUC 1.00 vs 0.97 on val).
+  # Inverse L2 regularisation strength. Chosen with a sweep over 0.001-1: C = 1 overfits the
+  # 512-d CLIP embeddings (train ROC-AUC 1.00 vs 0.97 on val); below 0.01 the metrics level off
+  # within the validation noise, so 0.01 is kept.
   C: 0.01
   # `balanced` reweights the loss by inverse class frequency, so the head stays calibrated
   # against the 5:1 fake:real imbalance (or any other ratio in future training data).
   class_weight: balanced
   max_iter: 1000
   seed: 42
+
+logo:
+  # Leave-one-generator-out (MR-4): one `logo@<generator>` stage per entry. Each run trains the
+  # `train` head without that generator and tests it on real images + that generator only.
+  holdout: [sd21, sdxl, sd3, dalle3, midjourney]
+  # Bootstrap resamples for the 95% confidence interval of the unseen balanced accuracy
+  # (each test set is small: ~190 real + ~190 generated images). Whole captions are resampled.
+  n_bootstrap: 1000
+  seed: 42
+  # MR-4 target, checked on the worst held-out generator (strictest reading of the requirement).
+  target_balanced_accuracy: 0.70
+
+learning_curve:
+  # Fractions of the training captions the `train` head is re-trained on; each fraction below 1
+  # is averaged over `n_seeds` random draws of captions.
+  fractions: [0.1, 0.25, 0.5, 0.75, 1.0]
+  n_seeds: 5
