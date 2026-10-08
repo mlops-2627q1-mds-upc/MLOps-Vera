@@ -53,6 +53,12 @@ extend-select = ["I"]  # Add import sorting
 known-first-party = ["mlops_vera"]
 force-sort-within-sections = true
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "model: behavioural tests on the trained model and real data (need `dvc pull`)",
+]
+
 [dependency-groups]
 dev = [
     "black>=26.5.1",
