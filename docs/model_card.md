@@ -22,7 +22,7 @@ metrics:
 > Team **Vera** — *Machine Learning Systems in Production (MLOps)*, UPC 2026–2027.
 > Structure follows Mitchell et al. (2019), *Model Cards for Model Reporting*.
 >
-> **Status:** Milestone 2 baseline selected (v0.1). Results below are on the **validation** split, plus the leave-one-generator-out study; the held-out test evaluation is completed in Milestone 3.
+> **Status:** Milestone 2 baseline selected (v0.1). Results below are on the **validation** split, plus the leave-one-generator-out study; the held-out test split is kept for the final evaluation in a later milestone.
 
 ## Model details
 
@@ -57,7 +57,7 @@ A caption-grouped subsample of Defactify (800 captions with all six sources; 5,3
 
 ## Quantitative analyses
 
-Validation results of the selected model (test-set results follow in Milestone 3):
+Validation results of the selected model:
 
 | Metric | Value | Target |
 | --- | --- | --- |
