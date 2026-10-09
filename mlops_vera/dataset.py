@@ -4,7 +4,9 @@
 2. Sample `n_captions` captions (optionally only complete real + 5-generator groups).
 3. Fetch image bytes only for the parquet row groups that contain selected rows.
 
-Images are stored untouched (raw = immutable); preprocessing happens in `features.py`.
+Images are stored untouched (raw = immutable); preprocessing happens in `features.py`. The run
+is logged to MLflow (experiment `vera-data`) with the resolved dataset revision and the size and
+class balance of the sample.
 """
 
 import io
@@ -13,6 +15,7 @@ from pathlib import Path
 
 from huggingface_hub import HfApi, HfFileSystem
 from loguru import logger
+import mlflow
 import numpy as np
 import pandas as pd
 from PIL import Image
@@ -21,6 +24,7 @@ from tqdm import tqdm
 import typer
 
 from mlops_vera.config import RAW_DEFACTIFY_DIR, load_params
+from mlops_vera.tracking import stage_run
 
 app = typer.Typer()
 
@@ -89,6 +93,18 @@ def fetch_images(open_shard, selected: pd.DataFrame, out_dir: Path) -> pd.DataFr
     return pd.DataFrame(records).sort_values("image_id").reset_index(drop=True)
 
 
+def summarise(records: pd.DataFrame) -> dict:
+    """Size and class balance of the downloaded sample."""
+    return {
+        "n_images": len(records),
+        "n_captions": int(records["caption"].nunique()),
+        "n_real": int((records["label_a"] == 0).sum()),
+        "n_ai": int((records["label_a"] == 1).sum()),
+        # Raw images not square yet: the aspect-ratio shortcut that `preprocess` removes
+        "share_non_square": float((records["width"] != records["height"]).mean()),
+    }
+
+
 def _save(raw: bytes, shard: str, row: int, meta: pd.Series, img_dir: Path) -> dict:
     with Image.open(io.BytesIO(raw)) as im:
         fmt, (w, h) = (im.format or "JPEG").lower(), im.size
@@ -109,7 +125,7 @@ def _save(raw: bytes, shard: str, row: int, meta: pd.Series, img_dir: Path) -> d
 
 
 @app.command()
-def main(output_dir: Path = RAW_DEFACTIFY_DIR):
+def main(output_dir: Path = RAW_DEFACTIFY_DIR, experiment: str = "vera-data"):
     p = load_params("data")
     api, fs = HfApi(), HfFileSystem()
     sha = api.dataset_info(p["repo_id"], revision=p["revision"]).sha
@@ -128,6 +144,13 @@ def main(output_dir: Path = RAW_DEFACTIFY_DIR):
     records.to_csv(output_dir / "metadata.csv", index=False)
     source = {"repo_id": p["repo_id"], "revision": sha, "n_images": len(records)}
     (output_dir / "source.json").write_text(json.dumps(source, indent=2))
+
+    with stage_run("download", experiment):
+        mlflow.log_params({f"data.{k}": v for k, v in p.items()})
+        mlflow.set_tag("data_sha", sha)  # `revision` resolved by the Hub
+        mlflow.log_metrics({"n_shards": len(shards), "n_candidate_images": len(meta)})
+        mlflow.log_metrics(summarise(records))
+        mlflow.log_dict(source, "source.json")
     logger.success(f"Saved {len(records)} raw images to {output_dir}")
 
 

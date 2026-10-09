@@ -127,8 +127,8 @@ uv run dvc plots show             # line chart of the curve (dvc_plots/index.htm
 
 ## Experiment tracking (MLflow)
 
-Training runs are logged with **MLflow** to the tracking server hosted by DagsHub:
-<https://dagshub.com/AdriSegurao/MLOps-Vera.mlflow>.
+Every stage of the DVC pipeline logs a run with **MLflow** to the tracking server hosted by
+DagsHub: <https://dagshub.com/AdriSegurao/MLOps-Vera.mlflow>.
 
 ```bash
 cp .env.example .env   # then fill in your DagsHub username and access token
@@ -136,6 +136,18 @@ cp .env.example .env   # then fill in your DagsHub username and access token
 
 `.env` is git-ignored and loaded automatically by `mlops_vera/config.py`. Without it, runs are
 logged locally to `./mlflow.db` (browse them with `uv run mlflow ui`).
+
+| Experiment | Stages | What each run records |
+| --- | --- | --- |
+| `vera-data` | `download`, `preprocess`, `split`, `embed` | sample size and class balance, resolved dataset sha, an example caption group after preprocessing, per-split counts, embedding dimension and throughput |
+| `vera-baselines` | `train` | see [Running experiments](#running-experiments) |
+| `vera-logo` | `logo@<generator>`, `logo_summary` | val and unseen-generator metrics with bootstrap CI; mean and worst case against MR-4, with a chart |
+| `vera-learning-curve` | `learning_curve` | validation metrics per training-caption percentage (one MLflow step each), with a chart |
+
+Each run logs its section of `params.yaml` as params, and all share the same lineage tags:
+`dvc.stage` (the stage address, e.g. `logo@sd3`), `data_revision`, the DVC hash of every input
+(`<input>_md5`, read from `dvc.lock`), `dvc.exp_name` when run by `dvc exp run -n <name>`, and
+the Git commit (added by MLflow). The helpers live in `mlops_vera/tracking.py`.
 
 ### Running experiments
 
