@@ -1,4 +1,4 @@
-<!-- Title: Conventional Commits format, e.g. "feat(data): add caption-grouped split stage" (see CONTRIBUTING.md) -->
+<!-- Title: commit format, e.g. "feat(data): add caption-grouped split stage", or Jira style, e.g. "KAN-18: Re-run the caption-based split" (see CONTRIBUTING.md) -->
 
 ## Why
 
@@ -16,7 +16,7 @@ Jira: KAN-
 
 ## Checklist
 
-- [ ] The title follows Conventional Commits
+- [ ] The title follows the commit format or the Jira style (`KAN-n: summary`)
 - [ ] `uv run ruff check .`, `uv run ruff format --check .` and `uv run pytest` pass
 - [ ] No data or credentials are committed (`data/`, `.dvc/config.local`, `.env`)
 - [ ] If the data changed: `dvc.lock` is updated and `dvc push` is done
