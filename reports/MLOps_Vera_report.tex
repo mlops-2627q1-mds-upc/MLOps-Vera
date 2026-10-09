@@ -272,13 +272,13 @@ The project runs on general-purpose laptops and free-tier cloud, so we favour tr
 \newpage
 
 \subsubsection{Model card}
-\textit{Following Mitchell et al.\ (2019); summary of the full card in \texttt{docs/model\_card.md}. Test-set results are completed in Milestone~3.}
+\textit{Following Mitchell et al.\ (2019); summary of the full card in \texttt{docs/model\_card.md}.}
 
 \paragraph{Model.} Built by Team Vera with transfer learning: the frozen image encoder of \textbf{CLIP ViT-B/32} (512-d embeddings) with a standardisation + \textbf{logistic-regression} head (C~$=0.01$, balanced class weights against the $\sim$5:1 imbalance). An image is flagged as AI when $P(\text{AI}) \geq 0.57$, a threshold tuned on validation and stored in the model. It was selected among six baselines and a regularisation sweep tracked with MLflow, and trained on the 5{,}352 training images of our subsample.
 
 \paragraph{Intended use.} Deciding whether an image is real or AI-generated, with a confidence score, for content-moderation back-ends, fact-checkers and developers using the API. Out of scope: face-swap or partial-manipulation forensics, adversarial inputs, generators far from the training set, and any high-stakes decision without human review.
 
-\paragraph{Evaluation.} Balanced accuracy, macro-F1, PR-AUC and recall of the minority real class, reported overall and per generator. On validation: balanced accuracy 0.935, macro-F1 0.884, recall (real) 0.947, PR-AUC (real) 0.933, and recall per generator from 0.85 (SD~3) to 0.98 (DALL-E~3). On generators left out of training, balanced accuracy is 0.898 on average and 0.822 at worst (SD~3), so MR-4 is met. Test-set results follow in Milestone~3.
+\paragraph{Evaluation.} Balanced accuracy, macro-F1, PR-AUC and recall of the minority real class, reported overall and per generator. On validation: balanced accuracy 0.935, macro-F1 0.884, recall (real) 0.947, PR-AUC (real) 0.933, and recall per generator from 0.85 (SD~3) to 0.98 (DALL-E~3). On generators left out of training, balanced accuracy is 0.898 on average and 0.822 at worst (SD~3), so MR-4 is met. The held-out test split is kept for the final evaluation in a later milestone.
 
 \paragraph{Ethical considerations and caveats.} A detector can be evaded, and false positives may wrongly flag genuine images, so outputs are advisory and need human review. Accuracy is expected to drop on newer generators (monitored for drift and retrained when needed), and the model is only valid for COCO-like, modest-resolution images.
 
@@ -479,7 +479,7 @@ We keep \textbf{CLIP ViT-B/32} as backbone and \textbf{balanced class weights}: 
 \end{tabular}
 \end{table}
 
-The selected model is therefore \textbf{CLIP ViT-B/32 + logistic regression with balanced class weights and C~$=0.01$}, which meets all four validation targets (MR-1--MR-3); it is the configuration committed in \texttt{params.yaml} and versioned with DVC. Its evaluation on the held-out test split is part of Milestone~3.
+The selected model is therefore \textbf{CLIP ViT-B/32 + logistic regression with balanced class weights and C~$=0.01$}, which meets all four validation targets (MR-1--MR-3); it is the configuration committed in \texttt{params.yaml} and versioned with DVC.
 
 % ----- 2.3 Milestone 3 -----
 \subsection{Milestone 3: Model Building -- Quality Assurance}
