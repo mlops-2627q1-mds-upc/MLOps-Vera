@@ -33,6 +33,7 @@ Based on [Cookiecutter Data Science](https://cookiecutter-data-science.drivendat
 ```
 ├── data/                  # Versioned with DVC (not Git)
 │   ├── raw/defactify/     #   untouched images + metadata (stage `download`)
+│   ├── interim/           #   image metadata table for data validation (stage `image_metadata`)
 │   └── processed/
 │       ├── defactify_224/ #   cropped, resized, re-encoded images (stage `preprocess`)
 │       ├── splits/        #   caption-grouped train/val/test CSVs (stage `split`)
@@ -43,15 +44,17 @@ Based on [Cookiecutter Data Science](https://cookiecutter-data-science.drivendat
 │   ├── dataset.py         #   stage `download`
 │   ├── features.py        #   stage `preprocess`
 │   ├── split.py           #   stage `split`
+│   ├── metadata.py        #   stage `image_metadata`
+│   ├── validate.py        #   stage `validate_data` (Great Expectations)
 │   └── modeling/          #   stages `embed`, `train`; inference
 ├── models/                # Trained classifier (stage `train`, DVC)
 ├── notebooks/             # Exploratory data analysis
 ├── reports/               # LaTeX report, milestone write-ups, metrics/ (DVC metrics)
-├── tests/                 # Pytest suite (offline)
+├── tests/                 # Pytest suite: unit tests (offline) and model tests (need dvc pull)
 ├── dvc.yaml / dvc.lock    # Pipeline definition and its locked state
 ├── params.yaml            # Pipeline hyper-parameters
 ├── pyproject.toml / uv.lock
-└── Makefile               # make requirements | data | train | test | lint
+└── Makefile               # make requirements | data | train | validate | test | lint
 ```
 
 ## Getting the data (DVC)
@@ -245,6 +248,52 @@ Each branch is also an MLflow run (`<backbone>-logo-<generator>`, experiment `ve
 Mean 0.898, worst 0.822 (SD 3): MR-4 is met. Each test set has 188 real and 188 generated images
 from 120 captions; the 95% bootstrap CI resamples whole captions, since images of the same caption
 show the same scene and their errors are correlated.
+
+## Quality assurance
+
+### Data validation (Great Expectations)
+
+Great Expectations validates tables, and our data are images, so the `image_metadata` stage first
+turns every image into one row of metadata: whether the raw and the preprocessed file open, their
+format, colour mode, size and file size, plus the brightness, contrast and md5 hash of the
+preprocessed image, its labels and its split. The `validate_data` stage then checks four tables
+built from it, each with its own expectation suite (32 expectations, thresholds in the `validate`
+section of `params.yaml`):
+
+| Suite | One row per | Checks |
+| --- | --- | --- |
+| `images` | image | unique ids; valid and consistent labels (real ↔ no generator); every file opens; raw sizes plausible; preprocessed images are 224×224 RGB JPEGs, not black, white or flat; no duplicate files; ~5 AI images per real one |
+| `captions` | caption | every caption in exactly one split (no leakage, DR-4) and with all six sources |
+| `splits` | split | real share, all generators present, size matching the split fractions |
+| `shortcuts` | image feature | no single preprocessed-image feature predicts the label: ROC-AUC ≤ 0.60 (DR-5) |
+
+```bash
+uv run dvc repro validate_data   # fails, stopping the pipeline, if any expectation fails
+```
+
+It writes a summary (`reports/metrics/data_validation.json`, a DVC metric) and the HTML Data Docs
+(`reports/data_docs/index.html`, not versioned). The `shortcuts` suite verifies the purpose of
+preprocessing: on the raw images the aspect ratio alone separates real from AI images with
+ROC-AUC 0.75 (all AI images are square, only 2% of the real ones), while after preprocessing no
+feature exceeds 0.55 (file size 0.52, brightness 0.55, contrast 0.53).
+
+### Tests (Pytest)
+
+```bash
+uv run pytest --cov=mlops_vera   # all tests with coverage (87% of the package)
+uv run pytest -m "not model"     # only the fast, offline tests
+```
+
+- **Unit tests** (offline, synthetic data) for every stage, including the expectation suites:
+  valid metadata passes, and each kind of broken data (non-square or black image, label
+  mismatch, caption leakage, duplicate file, unreadable file, missing generator, size shortcut)
+  fails the suite meant to catch it.
+- **Model tests** (`-m model`, on the real artefacts; skipped if they are not pulled): the saved
+  model meets the model-card targets on validation and detects at least 80% of every generator;
+  it classifies at the tuned threshold and retraining reproduces it; the serving path (raw image
+  → `preprocess_image` → backbone) reproduces the training embeddings (no training/serving skew,
+  FR-5); and at least 90% of its decisions survive mirroring, JPEG re-compression (q75, q50), a
+  10% brightness change or a half-resolution upload (measured: 94–98%).
 
 ## Team
 

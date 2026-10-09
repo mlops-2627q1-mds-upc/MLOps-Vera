@@ -17,6 +17,7 @@ classifiers = [
 ]
 dependencies = [
     "dvc>=3.67.1",
+    "great-expectations>=1.24.0",
     "huggingface-hub>=2.0.0",
     "joblib>=1.6.0",
     "loguru",
@@ -52,11 +53,18 @@ extend-select = ["I"]  # Add import sorting
 known-first-party = ["mlops_vera"]
 force-sort-within-sections = true
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "model: behavioural tests on the trained model and real data (need `dvc pull`)",
+]
+
 [dependency-groups]
 dev = [
     "black>=26.5.1",
     "pylint>=4.0.8",
     "pytest>=9.1.1",
+    "pytest-cov>=6.0",
 ]
 
 # CPU-only PyTorch wheels (the default Linux/Windows wheels bundle CUDA, ~2-3 GB).

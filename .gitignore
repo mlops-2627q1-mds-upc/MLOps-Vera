@@ -46,6 +46,7 @@ mlflow.db
 /.dvc/cache/
 /.dvc/tmp/
 /dvc_plots/
+/reports/data_docs/
 .codecarbon/
 
 # ---- Data & models: content is versioned with DVC, not Git ----
