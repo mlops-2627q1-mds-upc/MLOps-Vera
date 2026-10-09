@@ -39,15 +39,14 @@ from sklearn.model_selection import FixedThresholdClassifier
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import StandardScaler
 import typer
-import yaml
 
 from mlops_vera.config import (
     CLASSIFIER_PATH,
     EMBEDDINGS_DIR,
     METRICS_DIR,
-    PROJ_ROOT,
     load_params,
 )
+from mlops_vera.tracking import stage_run
 
 app = typer.Typer()
 
@@ -127,26 +126,6 @@ def plot_pr_curve(y: np.ndarray, scores: np.ndarray) -> Figure:
     return fig
 
 
-def dvc_hash(path: str) -> str | None:
-    """md5 that dvc.lock records for output `path`: ties the run to an exact data version."""
-    lock = yaml.safe_load((PROJ_ROOT / "dvc.lock").read_text())
-    for stage in lock["stages"].values():
-        for out in stage.get("outs", []):
-            if out["path"] == path:
-                return out["md5"]
-    return None
-
-
-def lineage_tags(info: dict) -> dict:
-    """MLflow tags tying a run to its exact inputs: dataset revision, DVC hash of the
-    embeddings and backbone weights (MLflow adds the Git commit)."""
-    return {
-        "backbone_weights": info["weights"],
-        "data_revision": load_params("data")["revision"],
-        "embeddings_md5": dvc_hash("data/processed/embeddings"),
-    }
-
-
 @app.command()
 def main(
     embeddings_dir: Path = EMBEDDINGS_DIR,
@@ -181,13 +160,12 @@ def main(
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
     metrics_path.write_text(json.dumps(metrics, indent=2), newline="\n")
 
-    mlflow.set_experiment(experiment)
     weighting = "balanced" if p["class_weight"] == "balanced" else "unweighted"
     run_name = f"{info['backbone']}-logreg-{weighting}-C{p['C']:g}"
-    with mlflow.start_run(run_name=run_name) as run:
+    with stage_run("train", experiment, run_name, inputs=("data/processed/embeddings",)) as run:
         mlflow.log_params({f"embed.{k}": v for k, v in p_embed.items()})
         mlflow.log_params({f"train.{k}": v for k, v in p.items()})
-        mlflow.set_tags(lineage_tags(info))
+        mlflow.set_tag("backbone_weights", info["weights"])
         mlflow.log_metric("threshold", threshold)
         for split in ("train", "val"):
             mlflow.log_metrics({f"{split}_{k}": v for k, v in metrics[split].items()})

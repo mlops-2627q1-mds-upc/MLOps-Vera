@@ -1,6 +1,6 @@
 {
   "holdout": "sd21",
-  "threshold": 0.4660797715187073,
+  "threshold": 0.46608322858810425,
   "n_unseen": {
     "real": 188,
     "ai": 188

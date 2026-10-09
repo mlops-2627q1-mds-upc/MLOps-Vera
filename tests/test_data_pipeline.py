@@ -6,6 +6,7 @@ Uses tiny synthetic parquet shards that mimic the Defactify schema, so no networ
 import io
 import json
 
+import mlflow
 import numpy as np
 import pandas as pd
 from PIL import Image
@@ -13,7 +14,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 
-from mlops_vera import features, split
+from mlops_vera import dataset, features, split
 from mlops_vera.config import load_params
 from mlops_vera.dataset import fetch_images, read_metadata, select_captions
 from mlops_vera.features import preprocess_image
@@ -102,6 +103,69 @@ def test_split_has_no_caption_leakage():
     assert out["split"].value_counts().to_dict() == {"train": 420, "val": 90, "test": 90}
 
 
+class _FakeHub:  # pylint: disable=missing-function-docstring,unused-argument  # mimics HfApi
+    """Stands in for HfApi and HfFileSystem, serving the local `shards`."""
+
+    sha = "0123abc"
+
+    def __init__(self, shards):
+        self.shards = shards
+
+    def dataset_info(self, repo_id, revision):
+        return type("Info", (), {"sha": self.sha})()
+
+    def list_repo_files(self, repo_id, repo_type, revision):
+        return [*self.shards, "README.md"]
+
+    def open(self, path, mode):
+        return open(self.shards["data/" + path.rpartition("/data/")[2]], mode)
+
+
+def test_data_stages_run_end_to_end_and_log_to_mlflow(shards, tmp_path, monkeypatch):
+    params = load_params()
+    params["data"]["n_captions"] = 9  # every complete caption of the fixture
+    for module in (dataset, features, split):
+        monkeypatch.setattr(module, "load_params", lambda section: params[section])
+    hub = _FakeHub(shards)
+    monkeypatch.setattr(dataset, "HfApi", lambda: hub)
+    monkeypatch.setattr(dataset, "HfFileSystem", lambda: hub)
+    raw, processed, splits = tmp_path / "raw", tmp_path / "processed", tmp_path / "splits"
+
+    dataset.main(output_dir=raw, experiment="test")
+    features.main(input_dir=raw, output_dir=processed, experiment="test")
+    split.main(
+        input_dir=processed,
+        output_dir=splits,
+        metrics_path=tmp_path / "split_summary.json",
+        experiment="test",
+    )
+
+    found = mlflow.search_runs(experiment_names=["test"], output_format="list")
+    runs = {r.info.run_name: r.data for r in found}
+    assert set(runs) == {"download", "preprocess", "split"}
+    assert all(data.tags["dvc.stage"] == name for name, data in runs.items())
+    artifacts = {
+        r.info.run_name: {a.path for a in mlflow.MlflowClient().list_artifacts(r.info.run_id)}
+        for r in found
+    }
+
+    download = runs["download"]
+    assert download.tags["data_sha"] == hub.sha
+    assert download.params["data.n_captions"] == "9"
+    assert download.metrics["n_images"] == 54 and download.metrics["n_captions"] == 9
+    assert download.metrics["n_real"] == 9 and download.metrics["n_ai"] == 45
+    assert download.metrics["share_non_square"] == 9 / 54  # the real 640x480 photos
+    assert "source.json" in artifacts["download"]
+
+    assert runs["preprocess"].params["preprocess.img_size"] == "224"
+    assert runs["preprocess"].metrics["n_images"] == 54
+    assert "example_caption_group.png" in artifacts["preprocess"]
+
+    summary = json.loads((tmp_path / "split_summary.json").read_text())
+    assert runs["split"].metrics["train_n_images"] == summary["train"]["n_images"]
+    assert sum(runs["split"].metrics[f"{s}_n_captions"] for s in ("train", "val", "test")) == 9
+
+
 def test_preprocess_main_writes_square_jpegs_and_metadata(tmp_path):
     raw, out = tmp_path / "raw", tmp_path / "processed"
     (raw / "images").mkdir(parents=True)
@@ -129,8 +193,7 @@ def test_preprocess_main_writes_square_jpegs_and_metadata(tmp_path):
         assert (im.format, im.mode, im.size) == ("JPEG", "RGB", (size, size))
 
 
-def test_split_main_writes_disjoint_splits_and_summary(tmp_path, monkeypatch):
-    monkeypatch.setattr(split, "METRICS_DIR", tmp_path / "metrics")
+def test_split_main_writes_disjoint_splits_and_summary(tmp_path):
     pd.DataFrame(
         {
             "image_id": [f"i{n}" for n in range(120)],
@@ -139,7 +202,11 @@ def test_split_main_writes_disjoint_splits_and_summary(tmp_path, monkeypatch):
         }
     ).to_csv(tmp_path / "metadata.csv", index=False)
 
-    split.main(input_dir=tmp_path, output_dir=tmp_path / "splits")
+    split.main(
+        input_dir=tmp_path,
+        output_dir=tmp_path / "splits",
+        metrics_path=tmp_path / "metrics" / "split_summary.json",
+    )
 
     parts = {s: pd.read_csv(tmp_path / "splits" / f"{s}.csv") for s in split.SPLITS}
     captions = [set(p["caption"]) for p in parts.values()]

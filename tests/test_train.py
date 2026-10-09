@@ -75,7 +75,6 @@ def test_main_trains_and_logs_to_mlflow(tmp_path, monkeypatch, class_weight, run
     params = load_params()
     params["train"].update(C=0.5, class_weight=class_weight)
     monkeypatch.setattr(train, "load_params", lambda section: params[section])
-    monkeypatch.setenv("MLFLOW_TRACKING_URI", f"sqlite:///{tmp_path / 'mlflow.db'}")
     rng = np.random.default_rng(0)
     emb = tmp_path / "embeddings"
     emb.mkdir()

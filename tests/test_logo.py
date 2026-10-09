@@ -63,8 +63,7 @@ def test_bootstrap_ci_resamples_whole_captions():
     assert by_caption[1] - by_caption[0] > 1.5 * (by_image[1] - by_image[0])
 
 
-def test_main_never_sees_the_holdout_before_testing(tmp_path, monkeypatch):
-    monkeypatch.setenv("MLFLOW_TRACKING_URI", f"sqlite:///{tmp_path / 'mlflow.db'}")
+def test_main_never_sees_the_holdout_before_testing(tmp_path):
     rng = np.random.default_rng(0)
     emb, splits = tmp_path / "embeddings", tmp_path / "splits"
     emb.mkdir()
@@ -103,6 +102,7 @@ def test_main_never_sees_the_holdout_before_testing(tmp_path, monkeypatch):
     run = mlflow.search_runs(experiment_names=["test"], output_format="list")[0]
     assert run.info.run_name == "toy-logo-sd3"
     assert run.data.params["holdout"] == "sd3"
+    assert run.data.tags["dvc.stage"] == "logo@sd3"
     assert run.data.metrics["unseen_balanced_accuracy"] == u["balanced_accuracy"]
 
 
@@ -131,9 +131,17 @@ def test_summary_main_writes_table_and_summary(tmp_path, monkeypatch):
         m = {"threshold": 0.5, "unseen": {"balanced_accuracy": ba, "recall_real": 0.9}}
         (logo_dir / f"{name}.json").write_text(json.dumps(m))
 
-    logo_summary.main(logo_dir=logo_dir, output_dir=tmp_path)
+    logo_summary.main(logo_dir=logo_dir, output_dir=tmp_path, experiment="test")
 
     table = pd.read_csv(tmp_path / "logo_table.csv")
     assert list(table["holdout"]) == ["sd21", "sd3"]
     summary = json.loads((tmp_path / "logo_summary.json").read_text())
     assert summary["worst_generator"] == "sd3" and summary["meets_mr4"] is True
+
+    run = mlflow.search_runs(experiment_names=["test"], output_format="list")[0]
+    assert run.data.tags["dvc.stage"] == "logo_summary"
+    assert run.data.tags["worst_generator"] == "sd3"
+    assert run.data.metrics["min_balanced_accuracy"] == 0.8
+    assert run.data.metrics["meets_mr4"] == 1.0
+    artifacts = {a.path for a in mlflow.MlflowClient().list_artifacts(run.info.run_id)}
+    assert {"logo.png", "logo_table.csv"} <= artifacts
