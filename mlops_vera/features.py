@@ -53,6 +53,7 @@ def main(
     output_dir: Path = PREPROCESSED_DIR,
     experiment: str = "vera-data",
 ):
+    """Crop, resize and re-encode every raw image (params.yaml: `preprocess`)."""
     p = load_params("preprocess")
     meta = pd.read_csv(input_dir / "metadata.csv")
     (output_dir / "images").mkdir(parents=True, exist_ok=True)

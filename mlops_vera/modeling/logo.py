@@ -29,13 +29,7 @@ import typer
 
 from mlops_vera.config import EMBEDDINGS_DIR, METRICS_DIR, SPLITS_DIR, load_params
 from mlops_vera.modeling.captions import load_captions
-from mlops_vera.modeling.train import (
-    GENERATORS,
-    build_model,
-    evaluate,
-    load_split,
-    tune_threshold,
-)
+from mlops_vera.modeling.train import GENERATORS, build_model, evaluate, load_split, tune_threshold
 from mlops_vera.tracking import stage_run
 
 app = typer.Typer()
@@ -86,7 +80,8 @@ def main(
     splits_dir: Path = SPLITS_DIR,
     output_dir: Path = METRICS_DIR / "logo",
     experiment: str = "vera-logo",
-):
+):  # pylint: disable=too-many-locals  # one linear script: filter, fit, evaluate, log
+    """Train without generator `holdout` and evaluate on it (one `logo@<generator>` stage)."""
     if holdout not in GENERATOR_IDS:
         raise typer.BadParameter(f"unknown generator {holdout!r}, expected {list(GENERATOR_IDS)}")
     g = GENERATOR_IDS[holdout]

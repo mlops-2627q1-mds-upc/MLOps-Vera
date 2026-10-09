@@ -38,7 +38,7 @@ def caption_subsample(captions: np.ndarray, fraction: float, seed: int) -> np.nd
     return np.isin(captions, chosen)
 
 
-def learning_curve(
+def learning_curve(  # pylint: disable=too-many-locals  # nested loop over fractions and seeds
     train: Split, val: Split, captions: np.ndarray, params: dict, fractions: list, n_seeds: int
 ) -> pd.DataFrame:
     """Validation metrics of the head trained on each fraction, averaged over `n_seeds` draws
@@ -64,7 +64,7 @@ def learning_curve(
 def plot_curve(table: pd.DataFrame) -> Figure:
     """Validation balanced accuracy (mean ± sd over the draws) vs. training images."""
     fig = Figure(figsize=(5, 3.5), layout="constrained")
-    ax = fig.subplots()
+    ax = fig.add_subplot()
     ax.errorbar(
         table["n_images"],
         table["balanced_accuracy"],
@@ -83,6 +83,7 @@ def main(
     output_dir: Path = METRICS_DIR,
     experiment: str = "vera-learning-curve",
 ):
+    """Write the validation learning curve of the `train` head (params.yaml: `learning_curve`)."""
     p, p_lc = load_params("train"), load_params("learning_curve")
     table = learning_curve(
         load_split(embeddings_dir, "train"),

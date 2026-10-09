@@ -33,6 +33,7 @@ N_SOURCES = 6  # Label_B: 0 = real, 1..5 = generators
 
 
 def list_shards(api: HfApi, repo_id: str, revision: str) -> list[str]:
+    """Parquet shards of the dataset at `revision`, sorted."""
     files = api.list_repo_files(repo_id, repo_type="dataset", revision=revision)
     return sorted(f for f in files if f.startswith("data/") and f.endswith(".parquet"))
 
@@ -126,6 +127,7 @@ def _save(raw: bytes, shard: str, row: int, meta: pd.Series, img_dir: Path) -> d
 
 @app.command()
 def main(output_dir: Path = RAW_DEFACTIFY_DIR, experiment: str = "vera-data"):
+    """Download the caption-grouped Defactify subsample defined in params.yaml (`data`)."""
     p = load_params("data")
     api, fs = HfApi(), HfFileSystem()
     sha = api.dataset_info(p["repo_id"], revision=p["revision"]).sha

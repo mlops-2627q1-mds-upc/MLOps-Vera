@@ -1,4 +1,4 @@
-"""Tests for the MLflow tracking shared by the DVC stages (local throw-away store, see conftest)."""
+"""Tests for the MLflow tracking shared by the DVC stages (throw-away store, see conftest)."""
 
 import mlflow
 import yaml

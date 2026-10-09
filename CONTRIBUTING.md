@@ -93,9 +93,12 @@ Run these checks locally before you push:
 uv sync --locked
 uv run ruff check .
 uv run ruff format --check .
+uv run pylint mlops_vera tests
 uv run dvc dag
 uv run pytest
 ```
+
+`make qa` runs these checks plus Pynblint and the data validation (see the README).
 
 Use `uv run ruff format .` to fix formatting and `uv run ruff check --fix .` to fix the lint errors that can be fixed automatically.
 

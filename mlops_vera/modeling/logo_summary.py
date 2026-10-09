@@ -36,7 +36,7 @@ def summarise(table: pd.DataFrame, target: float) -> dict:
 def plot_unseen(table: pd.DataFrame, target: float) -> Figure:
     """Unseen balanced accuracy per held-out generator, with its 95% CI and the MR-4 target."""
     fig = Figure(figsize=(5, 3.3), layout="constrained")
-    ax = fig.subplots()
+    ax = fig.add_subplot()
     ba = table["balanced_accuracy"]
     xerr = None
     if {"balanced_accuracy_ci_low", "balanced_accuracy_ci_high"} <= set(table):
@@ -54,6 +54,7 @@ def main(
     output_dir: Path = METRICS_DIR,
     experiment: str = "vera-logo",
 ):
+    """Join the leave-one-generator-out runs into one table and check MR-4."""
     p = load_params("logo")
     rows = []
     for name in p["holdout"]:

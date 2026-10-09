@@ -31,7 +31,8 @@ def test_backbone_outputs_features(name, dim):
 
 
 @pytest.mark.parametrize(
-    ("backbone", "mean", "std"), [("resnet18", 0.485, 0.229), ("clip_vit_b_32", 0.48145466, 0.26862954)]
+    ("backbone", "mean", "std"),
+    [("resnet18", 0.485, 0.229), ("clip_vit_b_32", 0.48145466, 0.26862954)],
 )
 def test_image_transform_normalises_as_backbone_expects(backbone, mean, std):
     x = image_transform(backbone)(Image.new("RGB", (224, 224), color=(255, 255, 255)))
@@ -55,7 +56,9 @@ def test_embed_images_keeps_order_and_shape(tmp_path):
     # Same result one image at a time -> batching does not reorder or mix images
     for i, p in enumerate(paths):
         assert torch.allclose(
-            torch.from_numpy(embed_images(model, [p], transform, 1)[0]), torch.from_numpy(X[i]), atol=1e-5
+            torch.from_numpy(embed_images(model, [p], transform, 1)[0]),
+            torch.from_numpy(X[i]),
+            atol=1e-5,
         )
 
 
@@ -93,7 +96,7 @@ def test_main_writes_embeddings_and_logs_to_mlflow(tmp_path, monkeypatch):
         "dim": 3,
     }
     with np.load(tmp_path / "embeddings" / "val.npz") as d:
-        assert d["X"].shape == (2, 3) and list(d["generator"]) == [0, 3]
+        assert np.shape(d["X"]) == (2, 3) and list(d["generator"]) == [0, 3]
 
     run = mlflow.search_runs(experiment_names=["test"], output_format="list")[0]
     assert run.info.run_name == "resnet18"

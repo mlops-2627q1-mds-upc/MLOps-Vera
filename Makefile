@@ -26,17 +26,25 @@ clean:
 	find . -type d -name "__pycache__" -delete
 
 
-## Lint using ruff (use `make format` to do formatting)
+## Lint the code: ruff (format + rules) and pylint (use `make format` to fix formatting)
 .PHONY: lint
 lint:
-	ruff format --check
-	ruff check
+	uv run ruff format --check .
+	uv run ruff check .
+	uv run pylint mlops_vera tests
 
 ## Format source code with ruff
 .PHONY: format
 format:
-	ruff check --fix
-	ruff format
+	uv run ruff check --fix .
+	uv run ruff format .
+
+## Lint the notebooks and the repository with Pynblint
+# Isolated tool (uvx): it pins an old typer that conflicts with ours, needs click < 8.2
+# and UTF-8 mode on Windows.
+.PHONY: nblint
+nblint:
+	PYTHONUTF8=1 PYTHONIOENCODING=utf-8 uvx --from pynblint --with "click<8.2" pynblint .
 
 
 
@@ -82,6 +90,10 @@ validate:
 .PHONY: test
 test:
 	uv run pytest --cov=mlops_vera --cov-report=term-missing
+
+## Run every quality check: lint, notebook lint, data validation and tests
+.PHONY: qa
+qa: lint nblint validate test
 
 
 #################################################################################

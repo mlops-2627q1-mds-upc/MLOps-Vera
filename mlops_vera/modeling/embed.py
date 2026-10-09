@@ -94,6 +94,8 @@ def image_transform(backbone: str) -> v2.Compose:
 
 
 class ImageFiles(Dataset):
+    """Image files as a torch Dataset of transformed tensors, in the given order."""
+
     def __init__(self, paths: list[Path], transform: v2.Compose):
         self.paths = paths
         self.transform = transform
@@ -131,6 +133,7 @@ def main(
     num_workers: int = 2,
     experiment: str = "vera-data",
 ):
+    """Embed every split with the frozen backbone in params.yaml (`embed`)."""
     p = load_params("embed")
     model, weights = build_backbone(p["backbone"])
     transform = image_transform(p["backbone"])

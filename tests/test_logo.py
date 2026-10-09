@@ -94,7 +94,9 @@ def test_main_never_sees_the_holdout_before_testing(tmp_path):
     u = m["unseen"]
     # Only real + held-out images are tested, so the AI recall is the held-out generator's recall
     assert {k for k in u if k.startswith("recall_")} == {"recall_real", "recall_ai"}
-    assert u["balanced_accuracy_ci_low"] <= u["balanced_accuracy"] <= u["balanced_accuracy_ci_high"]
+    assert (
+        u["balanced_accuracy_ci_low"] <= u["balanced_accuracy"] <= u["balanced_accuracy_ci_high"]
+    )
     assert u["balanced_accuracy"] >= 0.9  # separable toy data
 
     run = mlflow.search_runs(experiment_names=["test"], output_format="list")[0]
@@ -110,7 +112,9 @@ def test_main_rejects_unknown_generator(tmp_path):
 
 
 def test_summary_checks_mr4_on_the_worst_generator():
-    table = pd.DataFrame({"holdout": ["sd21", "sd3", "dalle3"], "balanced_accuracy": [0.9, 0.65, 0.95]})
+    table = pd.DataFrame(
+        {"holdout": ["sd21", "sd3", "dalle3"], "balanced_accuracy": [0.9, 0.65, 0.95]}
+    )
     s = logo_summary.summarise(table, target=0.70)
     assert s["worst_generator"] == "sd3" and s["min_balanced_accuracy"] == 0.65
     assert s["mean_balanced_accuracy"] == pytest.approx(0.8333, abs=1e-4)

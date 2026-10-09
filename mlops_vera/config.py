@@ -1,3 +1,5 @@
+"""Project paths and parameters shared by every pipeline stage."""
+
 from pathlib import Path
 
 from dotenv import load_dotenv
