@@ -143,9 +143,10 @@ def main(output_dir: Path = RAW_DEFACTIFY_DIR, experiment: str = "vera-data"):
 
     output_dir.mkdir(parents=True, exist_ok=True)
     records = fetch_images(open_shard, selected, output_dir)
-    records.to_csv(output_dir / "metadata.csv", index=False)
+    # LF line endings on every OS: DVC hashes file bytes (Windows would write CRLF)
+    records.to_csv(output_dir / "metadata.csv", index=False, lineterminator="\n")
     source = {"repo_id": p["repo_id"], "revision": sha, "n_images": len(records)}
-    (output_dir / "source.json").write_text(json.dumps(source, indent=2))
+    (output_dir / "source.json").write_text(json.dumps(source, indent=2), newline="\n")
 
     with stage_run("download", experiment):
         mlflow.log_params({f"data.{k}": v for k, v in p.items()})

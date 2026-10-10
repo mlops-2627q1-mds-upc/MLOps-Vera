@@ -77,7 +77,9 @@ def main(
 
     meta = meta.rename(columns={"width": "orig_width", "height": "orig_height"})
     meta["file"] = files
-    meta.drop(columns=["format"]).to_csv(output_dir / "metadata.csv", index=False)
+    meta.drop(columns=["format"]).to_csv(
+        output_dir / "metadata.csv", index=False, lineterminator="\n"
+    )
 
     with stage_run("preprocess", experiment, inputs=("data/raw/defactify",)):
         mlflow.log_params({f"preprocess.{k}": v for k, v in p.items()})
