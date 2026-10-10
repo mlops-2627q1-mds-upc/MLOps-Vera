@@ -91,9 +91,10 @@ validate:
 test:
 	uv run pytest --cov=mlops_vera --cov-report=term-missing
 
-## Run every quality check: lint, notebook lint, data validation and tests
+## Run every quality check: lint, data validation, tests, then notebook lint (it reads the
+## coverage data that the tests write)
 .PHONY: qa
-qa: lint nblint validate test
+qa: lint validate test nblint
 
 
 #################################################################################
