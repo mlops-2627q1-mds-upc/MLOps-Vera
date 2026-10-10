@@ -8,7 +8,8 @@ the embeddings and the images. They check that the model
 - gives the same embeddings when an image goes through the serving path (raw image ->
   `preprocess_image` -> backbone), i.e. no training/serving skew (FR-5);
 - keeps its decision under perturbations that do not change whether an image is real or
-  AI-generated: mirroring, JPEG re-compression, a brightness change and a smaller upload.
+  AI-generated: mirroring, JPEG re-compression, a brightness change and a smaller upload, each
+  applied to the uploaded image before the serving path.
 
 They are skipped when the artefacts are missing (run `uv run dvc pull` first), and can be
 deselected with `pytest -m "not model"`.
@@ -46,7 +47,7 @@ pytestmark = [
 TARGETS = {"balanced_accuracy": 0.85, "f1_macro": 0.85, "recall_real": 0.80, "pr_auc_real": 0.90}
 MIN_GENERATOR_RECALL = 0.80
 # Images per class sampled from validation for the image-level tests, and the minimum share of
-# decisions that must not change under each perturbation (measured: 0.94-0.98)
+# decisions that must not change under each perturbation (measured: 0.96-0.99)
 N_PER_CLASS = 60
 MIN_AGREEMENT = 0.90
 
@@ -150,27 +151,20 @@ def test_serving_path_reproduces_the_training_embeddings(encoder, sample, val):
     np.testing.assert_allclose(encoder([_serve(r) for r in raws]), val[0][idx], atol=1e-4)
 
 
+# Changes an image can undergo before it is uploaded (e.g. when shared on social media)
 PERTURBATIONS = {
     "mirror": ImageOps.mirror,
     "jpeg_q75": lambda im: _jpeg(im, 75),
     "jpeg_q50": lambda im: _jpeg(im, 50),
     "brightness_+10%": lambda im: ImageEnhance.Brightness(im).enhance(1.1),
+    "half_resolution": lambda im: im.resize((im.width // 2, im.height // 2)),
 }
 
 
 @pytest.mark.parametrize("name", PERTURBATIONS)
 def test_decision_is_invariant_to_label_preserving_perturbations(bundle, encoder, sample, name):
     _, raws, _ = sample
-    images = [_serve(r) for r in raws]
-    before = _scores(bundle, encoder(images)) >= bundle["threshold"]
-    after = _scores(bundle, encoder([PERTURBATIONS[name](im) for im in images]))
+    before = _scores(bundle, encoder([_serve(r) for r in raws])) >= bundle["threshold"]
+    after = _scores(bundle, encoder([_serve(PERTURBATIONS[name](r)) for r in raws]))
     agreement = (before == (after >= bundle["threshold"])).mean()
     assert agreement >= MIN_AGREEMENT, f"{name} changes {1 - agreement:.1%} of the decisions"
-
-
-def test_decision_is_invariant_to_upload_resolution(bundle, encoder, sample):
-    _, raws, _ = sample
-    full = _scores(bundle, encoder([_serve(r) for r in raws])) >= bundle["threshold"]
-    halved = [r.resize((r.width // 2, r.height // 2)) for r in raws]
-    half = _scores(bundle, encoder([_serve(r) for r in halved])) >= bundle["threshold"]
-    assert (full == half).mean() >= MIN_AGREEMENT

@@ -14,6 +14,7 @@ import hashlib
 from pathlib import Path
 
 from loguru import logger
+import mlflow
 import numpy as np
 import pandas as pd
 from PIL import Image
@@ -21,6 +22,7 @@ from tqdm import tqdm
 import typer
 
 from mlops_vera.config import INTERIM_DATA_DIR, PREPROCESSED_DIR, RAW_DEFACTIFY_DIR, SPLITS_DIR
+from mlops_vera.tracking import stage_run
 
 app = typer.Typer()
 IMAGE_METADATA_PATH = INTERIM_DATA_DIR / "image_metadata.csv"
@@ -106,11 +108,23 @@ def main(
     processed_dir: Path = PREPROCESSED_DIR,
     splits_dir: Path = SPLITS_DIR,
     output_path: Path = IMAGE_METADATA_PATH,
+    experiment: str = "vera-data",
 ):
     """Write the metadata table of every raw and preprocessed image."""
     meta = build_metadata(raw_dir, processed_dir, splits_dir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     meta.to_csv(output_path, index=False, lineterminator="\n")
+
+    inputs = ("data/raw/defactify", "data/processed/defactify_224", "data/processed/splits")
+    with stage_run("image_metadata", experiment, inputs=inputs):
+        mlflow.log_metrics(
+            {
+                "n_images": len(meta),
+                "n_raw_unreadable": int((~meta["raw_readable"].astype(bool)).sum()),
+                "n_unreadable": int((~meta["readable"].astype(bool)).sum()),
+                "n_duplicate_files": int(meta["md5"].dropna().duplicated().sum()),
+            }
+        )
     logger.success(f"Metadata of {len(meta)} images written to {output_path}")
 
 

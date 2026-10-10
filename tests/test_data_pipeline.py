@@ -91,6 +91,34 @@ def test_preprocess_outputs_fixed_square_rgb(size):
     assert out.mode == "RGB"
 
 
+def _palette_with_transparency() -> Image.Image:
+    img = Image.new("P", (64, 48))
+    img.info["transparency"] = 0
+    return img
+
+
+@pytest.mark.parametrize(
+    "img",
+    [
+        Image.new("RGBA", (300, 200), (10, 20, 30, 128)),
+        Image.new("LA", (200, 300), (50, 128)),
+        _palette_with_transparency(),
+        Image.new("CMYK", (320, 240), (0, 50, 100, 0)),
+        Image.new("RGB", (1, 1)),
+        Image.new("RGB", (4000, 10)),
+    ],
+    ids=["rgba", "grey-alpha", "palette-transparent", "cmyk", "1x1", "very-wide"],
+)
+def test_preprocess_handles_unusual_uploads(img):
+    out = preprocess_image(img, 224)
+    assert (out.size, out.mode) == ((224, 224), "RGB")
+
+
+def test_preprocess_puts_transparent_areas_on_white():
+    hidden_black = Image.new("RGBA", (100, 80), (0, 0, 0, 0))  # fully transparent black
+    assert preprocess_image(hidden_black, 224).getextrema() == ((255, 255),) * 3
+
+
 def test_split_has_no_caption_leakage():
     meta = pd.DataFrame(
         {

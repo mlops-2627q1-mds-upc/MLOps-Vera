@@ -9,8 +9,8 @@ stages:
       size: 1624
     - path: mlops_vera/dataset.py
       hash: md5
-      md5: b69bf199d88b9bfb2133b02965983817
-      size: 6548
+      md5: 2fab4c67f705491fa1a5246893628a59
+      size: 6667
     - path: mlops_vera/tracking.py
       hash: md5
       md5: b5a84fe8b0ee29147e29447a5b919fa2
@@ -26,16 +26,16 @@ stages:
     outs:
     - path: data/raw/defactify
       hash: md5
-      md5: 0ae7bdd3d32154856d0562ea1eb554a5.dir
-      size: 609772333
+      md5: da273559909be002463ad60beb7fbc87.dir
+      size: 609764594
       nfiles: 7736
   preprocess:
     cmd: python -m mlops_vera.features
     deps:
     - path: data/raw/defactify
       hash: md5
-      md5: 0ae7bdd3d32154856d0562ea1eb554a5.dir
-      size: 609772333
+      md5: da273559909be002463ad60beb7fbc87.dir
+      size: 609764594
       nfiles: 7736
     - path: mlops_vera/config.py
       hash: md5
@@ -43,8 +43,8 @@ stages:
       size: 1624
     - path: mlops_vera/features.py
       hash: md5
-      md5: 7064ac5083151eea9f005eb69f7df661
-      size: 3211
+      md5: da3351457969f71217e35cfcd9e2eff3
+      size: 3700
     - path: mlops_vera/tracking.py
       hash: md5
       md5: b5a84fe8b0ee29147e29447a5b919fa2
@@ -57,16 +57,16 @@ stages:
     outs:
     - path: data/processed/defactify_224
       hash: md5
-      md5: 67f99c4b31dcf1f9701d4937ef738fa2.dir
-      size: 131333034
+      md5: 2410073b633c63bd09eab4b6e7b7e294.dir
+      size: 131325299
       nfiles: 7735
   split:
     cmd: python -m mlops_vera.split
     deps:
     - path: data/processed/defactify_224
       hash: md5
-      md5: 67f99c4b31dcf1f9701d4937ef738fa2.dir
-      size: 131333034
+      md5: 2410073b633c63bd09eab4b6e7b7e294.dir
+      size: 131325299
       nfiles: 7735
     - path: mlops_vera/config.py
       hash: md5
@@ -102,8 +102,8 @@ stages:
     deps:
     - path: data/processed/defactify_224
       hash: md5
-      md5: 67f99c4b31dcf1f9701d4937ef738fa2.dir
-      size: 131333034
+      md5: 2410073b633c63bd09eab4b6e7b7e294.dir
+      size: 131325299
       nfiles: 7735
     - path: data/processed/splits
       hash: md5
@@ -122,6 +122,10 @@ stages:
       hash: md5
       md5: b5a84fe8b0ee29147e29447a5b919fa2
       size: 2659
+    - path: reports/metrics/data_validation.json
+      hash: md5
+      md5: e8d97d32f183640097aa0e02eac2d088
+      size: 615
     params:
       params.yaml:
         embed:
@@ -515,8 +519,8 @@ stages:
     deps:
     - path: data/processed/defactify_224
       hash: md5
-      md5: 67f99c4b31dcf1f9701d4937ef738fa2.dir
-      size: 131333034
+      md5: 2410073b633c63bd09eab4b6e7b7e294.dir
+      size: 131325299
       nfiles: 7735
     - path: data/processed/splits
       hash: md5
@@ -525,8 +529,8 @@ stages:
       nfiles: 3
     - path: data/raw/defactify
       hash: md5
-      md5: 0ae7bdd3d32154856d0562ea1eb554a5.dir
-      size: 609772333
+      md5: da273559909be002463ad60beb7fbc87.dir
+      size: 609764594
       nfiles: 7736
     - path: mlops_vera/config.py
       hash: md5
@@ -534,8 +538,12 @@ stages:
       size: 1624
     - path: mlops_vera/metadata.py
       hash: md5
-      md5: 57b47b4a7323a5476768e52f8a7aaa3b
-      size: 4151
+      md5: 5edc4764d8c426ddf653ac4d02958f86
+      size: 4751
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
     outs:
     - path: data/interim/image_metadata.csv
       hash: md5
@@ -550,20 +558,24 @@ stages:
       size: 1833133
     - path: data/raw/defactify/source.json
       hash: md5
-      md5: b80efe5d135a3dec6e7446d43411d536
-      size: 146
+      md5: 96695555fd8b8186ebc036041be0d6ae
+      size: 142
     - path: mlops_vera/config.py
       hash: md5
       md5: 96018a1431a0cc2b6bd25acd02c0e9f3
       size: 1624
     - path: mlops_vera/metadata.py
       hash: md5
-      md5: 57b47b4a7323a5476768e52f8a7aaa3b
-      size: 4151
+      md5: 5edc4764d8c426ddf653ac4d02958f86
+      size: 4751
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
     - path: mlops_vera/validate.py
       hash: md5
-      md5: 7ce840b16e3293134ebeb67e38ec2700
-      size: 13413
+      md5: 381a97e7963f126aa435967e3b788649
+      size: 14379
     params:
       params.yaml:
         preprocess.img_size: 224

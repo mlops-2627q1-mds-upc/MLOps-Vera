@@ -273,6 +273,14 @@ section of `params.yaml`):
 uv run dvc repro validate_data   # fails, stopping the pipeline, if any expectation fails
 ```
 
+`embed` depends on the validation summary, so DVC always runs `validate_data` before embedding,
+and a failed expectation stops every stage after it (`embed`, `train`, `logo`, `learning_curve`),
+also when only `dvc repro train` is asked for.
+
+Both stages log a run to MLflow (experiment `vera-data`), failed validations included: the
+metadata counts (images, unreadable files, duplicate files) and, for the validation, the result of
+every suite, the shortcut AUCs and the summary file.
+
 It writes a summary (`reports/metrics/data_validation.json`, a DVC metric) and the HTML Data Docs
 (`reports/data_docs/index.html`, not versioned). The `shortcuts` suite verifies the purpose of
 preprocessing: on the raw images the aspect ratio alone separates real from AI images with
@@ -282,20 +290,23 @@ feature exceeds 0.55 (file size 0.52, brightness 0.55, contrast 0.53).
 ### Tests (Pytest)
 
 ```bash
-uv run pytest --cov=mlops_vera   # all tests with coverage (91% of the package)
+uv run pytest --cov=mlops_vera   # all tests with coverage (97% of the package)
 uv run pytest -m "not model"     # only the fast, offline tests
 ```
 
 - **Unit tests** (offline, synthetic data) for every stage, including the expectation suites:
   valid metadata passes, and each kind of broken data (non-square or black image, label
   mismatch, caption leakage, duplicate file, unreadable file, missing generator, size shortcut)
-  fails the suite meant to catch it.
+  fails the suite meant to catch it. Preprocessing also handles unusual uploads (transparent or
+  palette PNGs, CMYK, a 1×1 or a very wide image): each becomes a 224×224 RGB image, with
+  transparent areas on white.
 - **Model tests** (`-m model`, on the real artefacts; skipped if they are not pulled): the saved
   model meets the model-card targets on validation and detects at least 80% of every generator;
   it classifies at the tuned threshold and retraining reproduces it; the serving path (raw image
   → `preprocess_image` → backbone) reproduces the training embeddings (no training/serving skew,
   FR-5); and at least 90% of its decisions survive mirroring, JPEG re-compression (q75, q50), a
-  10% brightness change or a half-resolution upload (measured: 94–98%).
+  10% brightness change or a half-resolution upload, each applied to the uploaded image before the
+  serving path (measured: 96–99%).
 
 ### Static analysis (Ruff, Pylint, Pynblint)
 
