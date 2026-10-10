@@ -290,7 +290,7 @@ feature exceeds 0.55 (file size 0.52, brightness 0.55, contrast 0.53).
 ### Tests (Pytest)
 
 ```bash
-uv run pytest --cov=mlops_vera   # all tests with coverage (91% of the package)
+uv run pytest --cov=mlops_vera   # all tests with coverage (97% of the package)
 uv run pytest -m "not model"     # only the fast, offline tests
 ```
 
@@ -305,7 +305,8 @@ uv run pytest -m "not model"     # only the fast, offline tests
   it classifies at the tuned threshold and retraining reproduces it; the serving path (raw image
   → `preprocess_image` → backbone) reproduces the training embeddings (no training/serving skew,
   FR-5); and at least 90% of its decisions survive mirroring, JPEG re-compression (q75, q50), a
-  10% brightness change or a half-resolution upload (measured: 94–98%).
+  10% brightness change or a half-resolution upload, each applied to the uploaded image before the
+  serving path (measured: 96–99%).
 
 ### Static analysis (Ruff, Pylint, Pynblint)
 
