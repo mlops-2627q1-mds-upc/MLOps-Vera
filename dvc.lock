@@ -538,8 +538,12 @@ stages:
       size: 1624
     - path: mlops_vera/metadata.py
       hash: md5
-      md5: 57b47b4a7323a5476768e52f8a7aaa3b
-      size: 4151
+      md5: 5edc4764d8c426ddf653ac4d02958f86
+      size: 4751
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
     outs:
     - path: data/interim/image_metadata.csv
       hash: md5
@@ -562,12 +566,16 @@ stages:
       size: 1624
     - path: mlops_vera/metadata.py
       hash: md5
-      md5: 57b47b4a7323a5476768e52f8a7aaa3b
-      size: 4151
+      md5: 5edc4764d8c426ddf653ac4d02958f86
+      size: 4751
+    - path: mlops_vera/tracking.py
+      hash: md5
+      md5: b5a84fe8b0ee29147e29447a5b919fa2
+      size: 2659
     - path: mlops_vera/validate.py
       hash: md5
-      md5: 7ce840b16e3293134ebeb67e38ec2700
-      size: 13413
+      md5: 381a97e7963f126aa435967e3b788649
+      size: 14379
     params:
       params.yaml:
         preprocess.img_size: 224

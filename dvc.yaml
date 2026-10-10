@@ -45,6 +45,7 @@ stages:
     deps:
       - mlops_vera/metadata.py
       - mlops_vera/config.py
+      - mlops_vera/tracking.py
       - data/raw/defactify
       - data/processed/defactify_224
       - data/processed/splits
@@ -57,6 +58,7 @@ stages:
       - mlops_vera/validate.py
       - mlops_vera/metadata.py
       - mlops_vera/config.py
+      - mlops_vera/tracking.py
       - data/interim/image_metadata.csv
       - data/raw/defactify/source.json
     params:

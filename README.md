@@ -277,6 +277,10 @@ uv run dvc repro validate_data   # fails, stopping the pipeline, if any expectat
 and a failed expectation stops every stage after it (`embed`, `train`, `logo`, `learning_curve`),
 also when only `dvc repro train` is asked for.
 
+Both stages log a run to MLflow (experiment `vera-data`), failed validations included: the
+metadata counts (images, unreadable files, duplicate files) and, for the validation, the result of
+every suite, the shortcut AUCs and the summary file.
+
 It writes a summary (`reports/metrics/data_validation.json`, a DVC metric) and the HTML Data Docs
 (`reports/data_docs/index.html`, not versioned). The `shortcuts` suite verifies the purpose of
 preprocessing: on the raw images the aspect ratio alone separates real from AI images with
