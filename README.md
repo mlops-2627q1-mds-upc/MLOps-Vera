@@ -273,6 +273,10 @@ section of `params.yaml`):
 uv run dvc repro validate_data   # fails, stopping the pipeline, if any expectation fails
 ```
 
+`embed` depends on the validation summary, so DVC always runs `validate_data` before embedding,
+and a failed expectation stops every stage after it (`embed`, `train`, `logo`, `learning_curve`),
+also when only `dvc repro train` is asked for.
+
 It writes a summary (`reports/metrics/data_validation.json`, a DVC metric) and the HTML Data Docs
 (`reports/data_docs/index.html`, not versioned). The `shortcuts` suite verifies the purpose of
 preprocessing: on the raw images the aspect ratio alone separates real from AI images with

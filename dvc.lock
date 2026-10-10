@@ -122,6 +122,10 @@ stages:
       hash: md5
       md5: b5a84fe8b0ee29147e29447a5b919fa2
       size: 2659
+    - path: reports/metrics/data_validation.json
+      hash: md5
+      md5: e8d97d32f183640097aa0e02eac2d088
+      size: 615
     params:
       params.yaml:
         embed:
