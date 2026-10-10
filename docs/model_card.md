@@ -1,6 +1,6 @@
 ---
 pretty_name: "Vera real-vs-AI image detector"
-license: cc-by-4.0
+license: mit
 pipeline_tag: image-classification
 language:
   - en
@@ -30,7 +30,7 @@ metrics:
 - **Model date / version:** September 2026; v0.1 (Milestone 2 baseline).
 - **Model type:** binary image classifier (real vs AI-generated) built by **transfer learning**: the image encoder of **CLIP ViT-B/32** (OpenAI weights, via open_clip), used **frozen**, maps each 224×224 image to a 512-d embedding; a **standardisation + logistic-regression** head (L2, C = 0.01, balanced class weights) outputs P(AI). The image is flagged as AI when P(AI) ≥ 0.57, a threshold tuned on validation to maximise balanced accuracy and stored inside the saved model. Backbone chosen among six tracked baselines (ResNet-18, ResNet-50 and CLIP ViT-B/32, each with and without class weighting), then C chosen with a sweep over 0.01–1; hyper-parameters live in `params.yaml` and every run is logged to MLflow (DagsHub).
 - **Training data:** [Defactify / MS-COCOAI](https://huggingface.co/datasets/Rajarshi-Roy-research/Defactify_Image_Dataset) (easily configurable to other datasets) (see the [dataset card](dataset_card.md)).
-- **Licence:** code under the repository licence; training data under CC BY 4.0.
+- **Licence:** code and trained model under the MIT licence (see `LICENSE`); training data under CC BY 4.0, with the attribution given in the [dataset card](dataset_card.md).
 - **Questions / comments:** Team Vera (see report cover).
 
 ## Intended use
