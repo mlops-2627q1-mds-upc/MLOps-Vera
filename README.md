@@ -297,7 +297,9 @@ uv run pytest -m "not model"     # only the fast, offline tests
 - **Unit tests** (offline, synthetic data) for every stage, including the expectation suites:
   valid metadata passes, and each kind of broken data (non-square or black image, label
   mismatch, caption leakage, duplicate file, unreadable file, missing generator, size shortcut)
-  fails the suite meant to catch it.
+  fails the suite meant to catch it. Preprocessing also handles unusual uploads (transparent or
+  palette PNGs, CMYK, a 1×1 or a very wide image): each becomes a 224×224 RGB image, with
+  transparent areas on white.
 - **Model tests** (`-m model`, on the real artefacts; skipped if they are not pulled): the saved
   model meets the model-card targets on validation and detects at least 80% of every generator;
   it classifies at the tuned threshold and retraining reproduces it; the serving path (raw image
