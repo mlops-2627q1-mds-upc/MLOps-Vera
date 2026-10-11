@@ -151,8 +151,9 @@ the Git commit (added by MLflow). The helpers live in `mlops_vera/tracking.py`.
 
 ### Energy and emissions (CodeCarbon)
 
-`stage_run` also measures every stage with **CodeCarbon** (NFR-4), so energy needs no extra code
-in the stages. Each MLflow run gets:
+Every stage is measured with **CodeCarbon** (NFR-4): its `main` is decorated with
+`@track_emissions`, which measures the whole stage and adds the result to the MLflow runs that
+`stage_run` opened. Each MLflow run gets:
 
 - metrics `codecarbon.emissions_g_co2eq`, `codecarbon.energy_kwh` (split into
   `codecarbon.cpu_energy_kwh`, `codecarbon.ram_energy_kwh` and `codecarbon.gpu_energy_kwh`),

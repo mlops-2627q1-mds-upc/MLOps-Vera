@@ -1,0 +1,35 @@
+{
+  "success": true,
+  "suites": {
+    "images": {
+      "success": true,
+      "evaluated": 24,
+      "successful": 24,
+      "failed": []
+    },
+    "captions": {
+      "success": true,
+      "evaluated": 3,
+      "successful": 3,
+      "failed": []
+    },
+    "splits": {
+      "success": true,
+      "evaluated": 4,
+      "successful": 4,
+      "failed": []
+    },
+    "shortcuts": {
+      "success": true,
+      "evaluated": 1,
+      "successful": 1,
+      "failed": []
+    }
+  },
+  "shortcut_auc": {
+    "file_kb": 0.5191,
+    "brightness": 0.5462,
+    "contrast": 0.5319,
+    "raw_aspect_ratio": 0.7459
+  }
+}
