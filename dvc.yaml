@@ -38,12 +38,14 @@ stages:
           cache: false
 
   # Data validation (DR-8): images are described as a metadata table, which Great Expectations
-  # checks. `validate_data` fails on bad data, so `dvc repro` stops.
+  # checks. `embed` depends on the validation summary, so DVC always validates the data first and
+  # stops before embedding (and every stage after it) when an expectation fails.
   image_metadata:
     cmd: python -m mlops_vera.metadata
     deps:
       - mlops_vera/metadata.py
       - mlops_vera/config.py
+      - mlops_vera/tracking.py
       - data/raw/defactify
       - data/processed/defactify_224
       - data/processed/splits
@@ -56,6 +58,7 @@ stages:
       - mlops_vera/validate.py
       - mlops_vera/metadata.py
       - mlops_vera/config.py
+      - mlops_vera/tracking.py
       - data/interim/image_metadata.csv
       - data/raw/defactify/source.json
     params:
@@ -74,6 +77,7 @@ stages:
       - mlops_vera/tracking.py
       - data/processed/defactify_224
       - data/processed/splits
+      - reports/metrics/data_validation.json  # the data must pass validation first
     params:
       - embed
     outs:

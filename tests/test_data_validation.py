@@ -6,14 +6,14 @@ every suite, and each kind of broken data must make the suite meant to catch it 
 
 import json
 
+import mlflow
 import numpy as np
 import pandas as pd
 from PIL import Image
 import pytest
 
-from mlops_vera import validate
+from mlops_vera import metadata, validate
 from mlops_vera.config import load_params
-from mlops_vera.metadata import build_metadata
 from mlops_vera.validate import build_suites, build_tables, validate_tables
 
 IMG_SIZE = 224
@@ -162,8 +162,13 @@ def test_main_writes_summary_and_fails_on_bad_data(meta, tmp_path):
         validate.main(metadata_path=meta_path, source_path=source, output_path=out, docs=False)
     assert not json.loads(out.read_text())["success"]
 
+    # Both runs are tracked in MLflow, the failed one included
+    runs = mlflow.search_runs(experiment_names=["vera-data"], output_format="list")
+    assert sorted(r.data.metrics["success"] for r in runs) == [0.0, 1.0]
+    assert {r.info.run_name for r in runs} == {"validate_data"}
 
-def test_build_metadata_describes_raw_and_processed_images(tmp_path):
+
+def test_metadata_stage_describes_raw_and_processed_images(tmp_path):
     raw, processed, splits = tmp_path / "raw", tmp_path / "processed", tmp_path / "splits"
     for d in (raw / "images", processed / "images", splits):
         d.mkdir(parents=True)
@@ -186,7 +191,9 @@ def test_build_metadata_describes_raw_and_processed_images(tmp_path):
     for s in ("val", "test"):
         pd.DataFrame({"image_id": []}).to_csv(splits / f"{s}.csv", index=False)
 
-    meta = build_metadata(raw, processed, splits).set_index("image_id")
+    out = tmp_path / "image_metadata.csv"
+    metadata.main(raw_dir=raw, processed_dir=processed, splits_dir=splits, output_path=out)
+    meta = pd.read_csv(out).set_index("image_id")
 
     a, b = meta.loc["a"], meta.loc["b"]
     assert (a["raw_width"], a["raw_height"], a["raw_format"]) == (640, 480, "JPEG")
@@ -195,3 +202,5 @@ def test_build_metadata_describes_raw_and_processed_images(tmp_path):
     assert a["brightness"] == pytest.approx(128, abs=1) and a["contrast"] < 1
     assert a["split"] == "train" and len(a["md5"]) == 32
     assert not b["raw_readable"] and not b["readable"] and pd.isna(b["split"])
+    (run,) = mlflow.search_runs(experiment_names=["vera-data"], output_format="list")
+    assert run.data.metrics["n_images"] == 2 and run.data.metrics["n_raw_unreadable"] == 1

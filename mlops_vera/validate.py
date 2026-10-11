@@ -15,7 +15,8 @@ tables derived from it. Each table has its own expectation suite:
 
 Thresholds live in the `validate` section of params.yaml. The stage writes a summary to
 reports/metrics/data_validation.json, builds the Great Expectations Data Docs (HTML) in
-reports/data_docs, and fails if any expectation fails, so `dvc repro` stops on bad data.
+reports/data_docs, logs the run to MLflow and fails if any expectation fails. `embed` depends on
+the summary, so DVC stops before embedding data that failed validation.
 """
 
 import json
@@ -25,12 +26,14 @@ import great_expectations as gx
 from great_expectations import expectations as gxe
 from great_expectations.data_context.types.base import ProgressBarsConfig
 from loguru import logger
+import mlflow
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 import typer
 
 from mlops_vera.config import METRICS_DIR, RAW_DEFACTIFY_DIR, REPORTS_DIR, load_params
 from mlops_vera.metadata import IMAGE_METADATA_PATH
+from mlops_vera.tracking import stage_run
 
 app = typer.Typer()
 DATA_DOCS_DIR = REPORTS_DIR / "data_docs"  # Great Expectations HTML report (git-ignored)
@@ -251,6 +254,16 @@ def summarise(result) -> dict:
     }
 
 
+def validation_metrics(summary: dict) -> dict:
+    """Numeric view of the summary for MLflow: the overall result, each suite and the shortcut
+    AUCs."""
+    metrics = {"success": float(summary["success"])}
+    for name, r in summary["suites"].items():
+        metrics[f"{name}_successful"] = r["successful"]
+        metrics[f"{name}_evaluated"] = r["evaluated"]
+    return metrics | {f"shortcut_auc_{k}": v for k, v in summary["shortcut_auc"].items()}
+
+
 def build_tables(meta: pd.DataFrame, fractions: dict) -> dict:
     """The four tables to validate, by suite name."""
     return {
@@ -278,6 +291,7 @@ def main(
     output_path: Path = METRICS_DIR / "data_validation.json",
     docs_dir: Path = DATA_DOCS_DIR,
     docs: bool = True,
+    experiment: str = "vera-data",
 ):
     """Validate the image metadata; exit with an error if any expectation fails."""
     p = load_params("validate")
@@ -300,6 +314,12 @@ def main(
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(summary, indent=2), newline="\n")
+
+    # Logged before failing, so that failed validations are tracked too
+    with stage_run("validate_data", experiment, inputs=("data/interim/image_metadata.csv",)):
+        mlflow.log_params({f"validate.{k}": v for k, v in p.items()})
+        mlflow.log_metrics(validation_metrics(summary))
+        mlflow.log_artifact(str(output_path))
 
     for name, r in results.items():
         log = logger.info if r["success"] else logger.error

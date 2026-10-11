@@ -24,9 +24,18 @@ from mlops_vera.tracking import stage_run
 app = typer.Typer()
 
 
+def to_rgb(img: Image.Image) -> Image.Image:
+    """RGB copy of `img`. Transparent areas (RGBA, LA or palette images with transparency) are
+    composited on white: converting directly would keep whatever colour they hide."""
+    if img.mode in ("RGBA", "LA", "PA") or "transparency" in img.info:
+        rgba = img.convert("RGBA")
+        return Image.alpha_composite(Image.new("RGBA", rgba.size, "white"), rgba).convert("RGB")
+    return img.convert("RGB")
+
+
 def preprocess_image(img: Image.Image, size: int) -> Image.Image:
     """Centre-crop to square and resize to `size`x`size` RGB."""
-    img = img.convert("RGB")
+    img = to_rgb(img)
     w, h = img.size
     s = min(w, h)
     left, top = (w - s) // 2, (h - s) // 2
@@ -68,7 +77,9 @@ def main(
 
     meta = meta.rename(columns={"width": "orig_width", "height": "orig_height"})
     meta["file"] = files
-    meta.drop(columns=["format"]).to_csv(output_dir / "metadata.csv", index=False)
+    meta.drop(columns=["format"]).to_csv(
+        output_dir / "metadata.csv", index=False, lineterminator="\n"
+    )
 
     with stage_run("preprocess", experiment, inputs=("data/raw/defactify",)):
         mlflow.log_params({f"preprocess.{k}": v for k, v in p.items()})
