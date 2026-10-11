@@ -149,6 +149,30 @@ Each run logs its section of `params.yaml` as params, and all share the same lin
 (`<input>_md5`, read from `dvc.lock`), `dvc.exp_name` when run by `dvc exp run -n <name>`, and
 the Git commit (added by MLflow). The helpers live in `mlops_vera/tracking.py`.
 
+### Energy and emissions (CodeCarbon)
+
+`stage_run` also measures every stage with **CodeCarbon** (NFR-4), so energy needs no extra code
+in the stages. Each MLflow run gets:
+
+- metrics `codecarbon.emissions_g_co2eq`, `codecarbon.energy_kwh` (split into
+  `codecarbon.cpu_energy_kwh`, `codecarbon.ram_energy_kwh` and `codecarbon.gpu_energy_kwh`),
+  `codecarbon.cpu_power_w` and `codecarbon.duration_s`;
+- tags `codecarbon.country`, `codecarbon.cpu_model` and `codecarbon.version`.
+
+Compare them across stages or experiments in the MLflow UI (add the `codecarbon.*` columns to the
+runs table). Each stage also appends a row with the full measurement to `.codecarbon/emissions.csv`
+(git-ignored, one file per machine). A summary line is logged at the end of each stage:
+
+```text
+embed: 0.123 g CO2eq, 1.234 Wh in 456 s
+```
+
+The tracker runs offline: the carbon intensity is the average of the grid of
+`codecarbon.country_iso_code` in `params.yaml` (Spain), so no IP geolocation request is made.
+Where CPU power counters are not readable (Intel RAPL on Windows, WSL and most VMs), CodeCarbon
+estimates CPU power from the processor's TDP and its load. The figures are then estimates, but
+good enough to compare stages and runs on the same machine.
+
 ### Running experiments
 
 The `embed` stage extracts features with a frozen pretrained backbone; `train` fits a

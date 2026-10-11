@@ -38,7 +38,7 @@ from tqdm import tqdm
 import typer
 
 from mlops_vera.config import EMBEDDINGS_DIR, PREPROCESSED_DIR, SPLITS_DIR, load_params
-from mlops_vera.tracking import flatten, stage_run
+from mlops_vera.tracking import flatten, stage_run, track_emissions
 
 app = typer.Typer()
 SPLITS = ("train", "val", "test")
@@ -126,6 +126,7 @@ def embed_images(
 
 
 @app.command()
+@track_emissions
 def main(
     images_dir: Path = PREPROCESSED_DIR,
     splits_dir: Path = SPLITS_DIR,

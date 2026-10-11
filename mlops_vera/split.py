@@ -15,7 +15,7 @@ import pandas as pd
 import typer
 
 from mlops_vera.config import METRICS_DIR, PREPROCESSED_DIR, SPLITS_DIR, load_params
-from mlops_vera.tracking import flatten, stage_run
+from mlops_vera.tracking import flatten, stage_run, track_emissions
 
 app = typer.Typer()
 SPLITS = ("train", "val", "test")
@@ -52,6 +52,7 @@ def summarise(meta: pd.DataFrame) -> dict:
 
 
 @app.command()
+@track_emissions
 def main(
     input_dir: Path = PREPROCESSED_DIR,
     output_dir: Path = SPLITS_DIR,

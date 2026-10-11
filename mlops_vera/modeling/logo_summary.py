@@ -16,7 +16,7 @@ import pandas as pd
 import typer
 
 from mlops_vera.config import METRICS_DIR, load_params
-from mlops_vera.tracking import stage_run
+from mlops_vera.tracking import stage_run, track_emissions
 
 app = typer.Typer()
 
@@ -49,6 +49,7 @@ def plot_unseen(table: pd.DataFrame, target: float) -> Figure:
 
 
 @app.command()
+@track_emissions
 def main(
     logo_dir: Path = METRICS_DIR / "logo",
     output_dir: Path = METRICS_DIR,
