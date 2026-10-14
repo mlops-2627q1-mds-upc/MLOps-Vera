@@ -12,13 +12,17 @@
 \usepackage{tabularx}
 \usepackage{array}
 \usepackage{enumitem}
+\usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{xcolor}
+\usepackage{float}
+\usepackage[tableposition=top]{caption}
 \usepackage{hyperref}
 \hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcommand{\guideline}[1]{\par{\color{gray}\itshape #1}\par\smallskip}
+\newcommand{\fillin}[1]{\textcolor{red}{[#1]}}  % to be completed by the team
 \setlength{\tabcolsep}{5pt}
 \renewcommand{\arraystretch}{1.2}
 
@@ -27,21 +31,40 @@
 % ============================ COVER PAGE ============================
 \begin{titlepage}
 \centering
-\vspace*{1.5cm}
+\vspace*{1cm}
 \includegraphics[width=0.55\textwidth]{images/upc-positiu-p3005.png}\par
-\vspace{3cm}
+\vspace{1.5cm}
 {\large\scshape Machine Learning Systems in Production (MLOps)\par}
 \vspace{0.3cm}
 {\normalsize Master in Data Science\par}
-\vspace{3cm}
+\vfill
 {\Huge\bfseries Detecting Real vs.\ AI-Generated Images\par}
 \vspace{0.5cm}
 {\large\itshape Initial deliverable --- Milestones 1--3\par}
-\vspace{3cm}
-{\large\bfseries Team Vera\par}
-\vspace{0.6cm}
-{\normalsize Arman Bazarchi \quad Adri\'an Segura \quad Pablo Rodr\'iguez\par}
 \vfill
+{\large\bfseries Team Vera\par}
+\vspace{0.5cm}
+{\small
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llll@{}}
+\toprule
+\textbf{Surname} & \textbf{Name} & \textbf{UPC e-mail} & \textbf{GitHub account} \\
+\midrule
+Bazarchi    & Arman    & \href{mailto:arman.bazarchi@estudiantat.upc.edu}{arman.bazarchi@estudiantat.upc.edu} & \href{https://github.com/armanbzi}{armanbzi} \\
+Rodr\'iguez & Pablo    & \href{mailto:pablo.rodriguez.elvira@estudiantat.upc.edu}{pablo.rodriguez.elvira@estudiantat.upc.edu} & \href{https://github.com/PabloRodriguezElvira}{PabloRodriguezElvira} \\
+Segura      & Adri\'an & \href{mailto:adrian.segura.onorato@estudiantat.upc.edu}{adrian.segura.onorato@estudiantat.upc.edu} & \href{https://github.com/AdriSegurao}{AdriSegurao} \\
+\bottomrule
+\end{tabular*}\par
+\vspace{0.8cm}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}ll@{}}
+\toprule
+\textbf{Resource} & \textbf{Link} \\
+\midrule
+Code repository (GitHub)       & \url{https://github.com/mlops-2627q1-mds-upc/MLOps-Vera} \\
+Data and experiments (DagsHub) & \url{https://dagshub.com/AdriSegurao/MLOps-Vera} \\
+Task board (Jira)              & \url{https://estudiantat-team-nuqcb37u.atlassian.net/browse/KAN} \\
+\bottomrule
+\end{tabular*}\par}
+\vspace{1cm}
 \end{titlepage}
 
 % ============================== INDEX ==============================
@@ -52,51 +75,18 @@
 \section{Introduction}
 
 \subsection{Goal of the project}
-Build, deploy, and operate an ML component that, given an input image, decides whether it is real or AI-generated, exposed as a monitored production service. Our main task is binary image classification (real vs \texttt{ai\_generated}), and optionally we might as well classify AI-generated images among the 5 generators (which generator model owns the image). Our focus is mostly on engineering around the model (reproducibility, QA, deployment, monitoring), not maximizing raw accuracy.
+Build, deploy, and operate an ML component that, given an input image, decides whether it is real or AI-generated, exposed as a monitored production service. Our main task is binary image classification (real vs \texttt{ai\_generated}), and optionally we might as well classify AI-generated images among the 5 generators (which generator model owns the image). Our focus is mostly on engineering around the model (reproducibility, QA, deployment, monitoring), not maximising raw accuracy.
 
-\paragraph{Success criteria.} The component is successful when it is served via a reproducible, containerised API that is tested and deployed automatically on every change (CI/CD), and meets the model targets on a leakage-free test set with shortcuts controlled, while all processes monitored for drift.
+\paragraph{Success criteria.} The component is successful when it is served via a reproducible, containerised API that is tested and deployed automatically on every change (CI/CD), and meets the model targets on a leakage-free test set with shortcuts controlled, while all processes are monitored for drift.
 
 \subsection{Teammates' evaluation}
-\guideline{Option 1: A complete team consensus on the following statement:}
+The team reached a complete consensus on the following statement:
+\begin{quote}
 ``All team members agree that they had an equal contribution to this delivery and project: completing a fair share of the team's work with acceptable/high quality, keeping commitments, and completing assignments on time, helping teammates who are having difficulty when it is easy or important''.
-
-\guideline{Option 2: There is no consensus on the above statement. Each team member evaluates (see scale 1 to 5 below) his/her peers' contributions in each delivery according to their contribution, based on CATME ratings.}
-
-\smallskip
-\noindent\textit{Figure 1. CATME ratings (from \url{https://info.catme.org/features/catme-five-dimensions/})}
-\smallskip
-
-\noindent\begin{tabularx}{\textwidth}{@{}c Y@{}}
-\toprule
-\textbf{Rating} & \textbf{Description of Rating} \\
-\midrule
-5 & Does more or higher-quality work than expected. Makes important contributions that improve the team's work. Helps teammates who are having difficulty completing their work. \\
-4 & Demonstrates behaviors described immediately above and below. \\
-3 & Completes a fair share of the team's work with acceptable quality. Keeps commitments and completes assignments on time. Helps teammates who are having difficulty when it is easy or important. \\
-2 & Demonstrates behaviors described immediately above and below. \\
-1 & Does not do a fair share of the team's work. Delivers sloppy or incomplete work. \\
-\bottomrule
-\end{tabularx}
-
-\medskip
-\guideline{Fill in the following table (received evaluations in rows):}
-\begin{center}
-\begin{tabular}{@{}lcccccc@{}}
-\toprule
- & Name 1 & Name 2 & Name 3 & Name 4 & Name 5 & Average \\
-\midrule
-Name 1 & -- &    &    &    &    &  \\
-Name 2 &    & -- &    &    &    &  \\
-Name 3 &    &    & -- &    &    &  \\
-Name 4 &    &    &    & -- &    &  \\
-Name 5 &    &    &    &    & -- &  \\
-\bottomrule
-\end{tabular}
-\end{center}
+\end{quote}
 
 % =========================== 2. METHODOLOGY ========================
 
-\newpage
 
 \section{Methodology}
 
@@ -105,11 +95,11 @@ Name 5 &    &    &    &    & -- &  \\
 
 \subsubsection{Selection of problem and requirements engineering for ML}
 
-\paragraph{Problem selection.} Modern text-to-image generators (Stable Diffusion, DALL-E, MidJourney, \dots) produce photorealistic images at scale, fuelling misinformation, fake reviews, and trust problems for platforms and media. Reliably telling a \textbf{real photograph} from an \textbf{AI-generated image} cannot be solved with hand-written rules, the cues are subtle, generator-specific, and evolving, which makes it a genuine machine-learning problem. We target real-vs-AI detection in particular because nowadays it is increasingly difficult to recognise whether a piece of media is real or AI-generated.
+\paragraph{Problem selection.} Modern text-to-image generators (Stable Diffusion, DALL-E, MidJourney, \dots) produce photorealistic images at scale, fuelling misinformation, fake reviews, and trust problems for platforms and media. Reliably telling a \textbf{real photograph} from an \textbf{AI-generated image} cannot be solved with hand-written rules: the cues are subtle, generator-specific, and evolving, which makes it a genuine machine-learning problem. We target real-vs-AI detection in particular because nowadays it is increasingly difficult to recognise whether a piece of media is real or AI-generated.
 
 \paragraph{What makes it unique.} Unlike general image-classification tasks whose target classes are usually obvious to a human (weather, animals, traffic signs, \dots), we target a category that in the near future may be very hard to classify even for people --- telling a real image from an AI-generated one. Our component also covers \textbf{five recent} generators (2022--2024), and instead of being specific to one dataset, our component would be easily configured and used with different, bigger datasets.
 
-\paragraph{Intended use.} As main use case of our ML component we can mention reliable platforms (such as news, social media, \dots) to distinguish real from fake (or generated) images to prevent misinformation and correctly flag likely AI-generated uploads via an API; another use case could be to quickly check the authenticity of an image with a confidence score, which is a well-documented and reproducible component for downstream developers to integrate in a larger system.
+\paragraph{Intended use.} As the main use case of our ML component we can mention reliable platforms (such as news, social media, \dots) to distinguish real from fake (or generated) images to prevent misinformation and correctly flag likely AI-generated uploads via an API; another use case could be to quickly check the authenticity of an image with a confidence score, which is a well-documented and reproducible component for downstream developers to integrate in a larger system.
 
 \paragraph{ML component specification (I/O contract).}
 \begin{itemize}[nosep,leftmargin=1.4em]
@@ -127,9 +117,11 @@ Name 5 &    &    &    &    & -- &  \\
   \item \textbf{Operating context:} stateless REST service, containerised, with health and metrics endpoints.
 \end{itemize}
 
-\newpage
+\paragraph{Requirements.}
 
-\paragraph{Requirements.} \textit{Priority:} \textbf{M} = Must, \textbf{S} = Should, \textbf{C} = Could.
+
+
+\textit{Priority:} \textbf{M} = Must, \textbf{S} = Should, \textbf{C} = Could.
 
 \medskip\noindent\textbf{Functional (FR)}\par\smallskip
 \noindent\begin{tabularx}{\textwidth}{@{}l Y c@{}}
@@ -144,7 +136,7 @@ FR-5 & Apply the \textbf{same} preprocessing at train and serve time (resize + r
 FR-6 & Provide health/readiness and metrics endpoints & S \\
 FR-7 & Optionally return the most-likely generator (attribution) & C \\
 \bottomrule
-\\
+
 
 \end{tabularx}
 
@@ -158,14 +150,13 @@ FR-7 & Optionally return the most-likely generator (attribution) & C \\
 DR-1 & Use labelled real \& AI images from multiple recent generators & M \\
 DR-2 & Data \& train/validation/test splits to be versioned and reproducible (DVC) & M \\
 DR-3 & Handle class imbalance if observed in the data (via class weights or generator-balanced sampling) & M \\
-DR-4 & Make sure no leakage such as image caption shared across train/val/test sets & M \\
+DR-4 & Make sure there is no leakage, such as an image caption shared across train/val/test sets & M \\
 DR-5 & Preprocessing to neutralise data to ensure the model does not rely on non-semantic \textbf{shortcuts} (such as aspect ratio, format) & M \\
 DR-6 & Data usage complies with licence (CC BY 4.0, MS COCO) & M \\
 DR-7 & Reserve a held-out generator (and data records) for drift evaluation & C \\
 DR-8 & Automated data-quality checks (schema, class values, missingness, \dots) & S \\
 \bottomrule
 
-\\
 
 \end{tabularx}
 
@@ -195,23 +186,23 @@ MR-5 & Decision threshold based on validation results (not fixed 0.5) & M \\
 \toprule
 \textbf{ID} & \textbf{Requirement} & \textbf{Pri} \\
 \midrule
-NFR-1 & Runs without a GPU, on minimum 2 CPU cores and 8\,GB of RAM: retrieving the data (\texttt{dvc pull}) takes $\leq$ 10\,min, and processing it into a trained model (preprocess, split, embed, train) $\leq$ 10\,min with a peak memory $\leq$ 3\,GB & S \medskip \\
+NFR-1 & Runs without a GPU, on a minimum of 2 CPU cores and 8\,GB of RAM: retrieving the data (\texttt{dvc pull}) takes $\leq$ 10\,min, and processing it into a trained model (preprocess, split, embed, train) $\leq$ 10\,min with a peak memory $\leq$ 3\,GB & S \medskip \\
 NFR-2 & With 10 concurrent clients, one container serves $\geq$ 5 requests/s for 5\,min with a p95 latency $\leq$ 2\,s and no failed requests; being stateless, it scales by adding replicas & S \medskip \\
 NFR-3 & The code is modular and easy to maintain: each pipeline stage is a separate module that can be run and tested on its own, automated tests cover $\geq$ 80\% of its lines, and static analysis (Ruff, Pylint) reports no errors & M \medskip \\
 NFR-4 & The energy and emissions of every pipeline run are measured with CodeCarbon, logged to MLflow and reported in the model card; a full retraining (embed and train) emits $\leq$ 5\,g CO$_2$eq & S \medskip \\
 NFR-5 & CPU, memory, request rate, latency and errors are collected every 15\,s and kept for at least 7 days; input drift is tested on each batch of 200 inputs, with an alert when it is significant ($p < 0.05$) & M \medskip \\
 NFR-6 & Available $\geq$ 95\% of the time (health check every minute); after a crash the service restarts by itself within 1\,min, and an alert is raised if it is still down after 2\,min; every invalid input gets an error without crashing the service & M \medskip \\
-NFR-7 & Uploaded images are only processed in memory, never written to disk or to the logs; files above 10\,MB or not in JPEG/PNG/WEBP are rejected before decoding;  & M \medskip \\
+NFR-7 & Uploaded images are only processed in memory, never written to disk or to the logs; files above 10\,MB or not in JPEG/PNG/WEBP are rejected before decoding & M \medskip \\
 NFR-8 & On the deployment VM, \texttt{POST /predict} answers within 300\,ms for $\geq$ 95\% of requests, and the service is ready $\leq$ 60\,s after start-up & M \medskip \\
 NFR-9 & While the service is starting, restarting or cannot load the model, it answers with a 503 error and its readiness check fails; as it keeps no state, a crash only loses the requests in progress, which clients can retry & M \medskip \\
 NFR-10 & Besides the label and the score, each response includes the decision threshold and the model version (the Git commit of the release); each deployed version has a model card with its test metrics per generator and its known limitations & M \medskip \\
 NFR-11 & An operator can roll the service back to any released model version, or take it offline, in $\leq$ 10\,min & S \medskip \\
-NFR-12 & Results are repeatable and consistent: \texttt{dvc repro} at the same commit reproduces every metric within $\pm$0.001; a retrained model is deployed only if it still meets main model requirements on the test split & M \\
+NFR-12 & Results are repeatable and consistent: \texttt{dvc repro} at the same commit reproduces every metric within $\pm$0.001; a retrained model is deployed only if it still meets the main model requirements on the test split & M \\
 \bottomrule
 \end{tabularx}
 
 \smallskip
-\noindent The time and memory targets keep a wide margin over our measurements on a laptop CPU (Apple M4), the margins also cover a slower server CPU.
+\noindent The time and memory targets keep a wide margin over our measurements on a laptop CPU (Apple M4); the margins also cover a slower server CPU.
 
 \medskip
 \medskip
@@ -269,7 +260,6 @@ The project runs on general-purpose laptops and free-tier cloud, so we favour tr
   \item \textbf{Scope and bias:} everyday COCO scenes and five 2022--2024 generators only (no face swaps, adversarial inputs or newer generators); the photos may show people and reflect MS COCO's own collection biases.
 \end{itemize}
 
-\newpage
 
 \subsubsection{Model card}
 \textit{Following Mitchell et al.\ (2019); summary of the full card in \texttt{docs/model\_card.md}.}
@@ -285,28 +275,30 @@ The project runs on general-purpose laptops and free-tier cloud, so we favour tr
 
 \subsubsection{Project coordination and communication}
 
-We coordinate the work with below tools, chosen so that every task, discussion and change leaves a trace that the whole team, and the teaching staff, can follow.
+We coordinate the work with the tools below, chosen so that every task, discussion and change leaves a trace that the whole team, and the teaching staff, can follow.
 
 
-\paragraph{Jira.} We selected because it is a Shared backlog with assignees and statuses, and its issue keys can be referenced from Git. In our flow we have a ticket per each task, assigned to a member and moved through \emph{To Do} $\rightarrow$ \emph{In Progress} $\rightarrow$ \emph{In Review} $\rightarrow$ \emph{Done}. When a ticket is implemented, a comment summarises the work and links its pull requests.
+\paragraph{Jira.} We selected it because it is a shared backlog with assignees and statuses, and its issue keys can be referenced from Git. In our flow we have a ticket for each task, assigned to a member and moved through \emph{To Do} $\rightarrow$ \emph{In Progress} $\rightarrow$ \emph{In Review} $\rightarrow$ \emph{Done}. When a ticket is implemented, a comment summarises the work and links its pull requests.
 
 \paragraph{GitHub.} Every change goes through a pull request that references its Jira ticket and is reviewed by a teammate.
 
-\paragraph{Discord.} The team's chat for messages and meetings, including Day-to-day coordination such as: announcing pull requests, asking for reviews, agreeing on decisions and splitting tasks.
+\paragraph{Discord.} The team's chat for messages and meetings, including day-to-day coordination such as announcing pull requests, asking for reviews, agreeing on decisions and splitting tasks.
 
-\paragraph{DagsHub.} Shared remote for the versioned data and models, and the MLflow tracking server, that each member have access to it with a personal token. \\
+\paragraph{DagsHub.} Shared remote for the versioned data and models, and the MLflow tracking server, which each member has access to with a personal token. \\
 
 
-The Jira key ties the tools together, it appears in the branch name, in the pull request description and, by convention, in the commit footers (\texttt{Refs: KAN-12}), so every change can be followed from its story to the code and back. Each member's contribution is visible in the assignees of the board and in the authors of the commits and pull requests on GitHub.
+The Jira key ties the tools together: it appears in the branch name, in the pull request description and, by convention, in the commit footers (\texttt{Refs: KAN-12}), so every change can be followed from its story to the code and back. Each member's contribution is visible in the assignees of the board and in the authors of the commits and pull requests on GitHub.
 
 \subsubsection{Selection of the cloud provider}
 
-In Milestone~4 the component is deployed as a REST API that only runs inference: a frozen CLIP ViT-B/32 image encoder (about 88M parameters, $\sim$350\,MB) and a logistic-regression head, on CPU. The host therefore needs around 2\,GB of RAM for the model, PyTorch and the API, plus room for the containers and the monitoring stack, It must also stay available, free of charge, for the whole course.
+In Milestone~4 the component is deployed as a REST API that only runs inference: a frozen CLIP ViT-B/32 image encoder (about 88M parameters, $\sim$350\,MB) and a logistic-regression head, on CPU. The host therefore needs around 2\,GB of RAM for the model, PyTorch and the API, plus room for the containers and the monitoring stack. It must also stay available, free of charge, for the whole course.
+
+\newpage
 
 \begin{table}[h]
 \centering
 \small
-\caption{Free tiers of the providers considered (course deployment guide).}
+\caption{Free tiers of the providers considered.}
 \label{tab:cloud}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -322,18 +314,18 @@ Okteto & unlimited & 3\,GB & 5\,GB & unlimited \\
 \end{table}
 \medskip
 
-We select \textbf{Virtech}, the FIB's private cloud (based on OpenNebula), which provides one virtual machine per team. It offers the most memory among the free options, while the 1\,GB and 0.6\,GB instances of AWS and Google Cloud are too small for the model and PyTorch and Okteto's 5\,GB disk is tight for container images. It also has no usage limits during the semester, needs no credit card or personal cloud account. Its main limitations are that the VM only lasts one semester.
+We select \textbf{Virtech}, the FIB's private cloud (based on OpenNebula), which provides one virtual machine per team. It offers the most memory among the free options, while instances of AWS and Google Cloud are too small for the model, and Okteto's disk is tight for container images. It also has no usage limits during the semester and needs no credit card or personal cloud account. Its main limitation is that the VM only lasts one semester.
 
 
 % ----- 2.2 Milestone 2 -----
 \subsection{Milestone 2: Model Building -- Reproducibility}
-In Milestone~2 we made the project reproducible: the data, the model and its metrics can be rebuilt from the repository and its DVC remote alone. Four practices work together: the \textbf{Cookiecutter Data Science} structure and \textbf{uv} give everyone the same layout and the same locked environment; \textbf{Git with GitHub Flow} versions the code through reviewed pull requests; \textbf{DVC} versions the data and the models as a pipeline whose outputs are stored on DagsHub; and \textbf{MLflow} records every training run. As a result, one Git commit pins the code, the parameters (\texttt{params.yaml}), the pipeline (\texttt{dvc.yaml}), the fingerprints of every data and model file (\texttt{dvc.lock}) and the environment (\texttt{uv.lock}): \texttt{uv sync} and \texttt{dvc pull} recover exactly those versions, and \texttt{dvc repro} rebuilds them. To check it, we rebuilt the model from the raw images on a second machine, and every training metric matched to within $10^{-5}$.
+The data, the model and its metrics can be rebuilt from the repository and its DVC remote alone. Four practices work together: the \textbf{Cookiecutter} structure and \textbf{uv} give everyone the same layout and the same locked environment; \textbf{Git with GitHub Flow} versions the code through reviewed pull requests; \textbf{DVC} versions the data and the models as a pipeline whose outputs are stored on DagsHub; and \textbf{MLflow} records every training run. As a result, one Git commit pins the code, the parameters (\texttt{params.yaml}), the pipeline (\texttt{dvc.yaml}), the fingerprints of every data and model file (\texttt{dvc.lock}) and the environment (\texttt{uv.lock}); with DVC we can recover exactly those versions.
 
 \subsubsection{Project structure}
 
-The repository follows the \textbf{Cookiecutter Data Science} template (v2, generated with \texttt{ccds} for the package \texttt{mlops\_vera}), Table~\ref{tab:structure} summarises the layout.
+The repository follows the \textbf{Cookiecutter Data Science} template (v2, generated with \texttt{ccds}).
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \small
 \caption{Repository layout.}
@@ -343,17 +335,18 @@ The repository follows the \textbf{Cookiecutter Data Science} template (v2, gene
 \textbf{Path} & \textbf{Contents} \\
 \midrule
 \texttt{data/} & \texttt{raw}, \texttt{interim}, \texttt{processed} and \texttt{external} data, versioned with DVC \\
-\texttt{mlops\_vera/} & Python package with one module per pipeline stage: \texttt{dataset.py} (download), \texttt{features.py} (preprocessing), \texttt{split.py} (caption-grouped split) and \texttt{modeling/} (training and inference). \texttt{config.py} holds all paths and loads \texttt{params.yaml}. \\
+\texttt{mlops\_vera/} & Python package with one module per pipeline stage: \texttt{dataset.py} (download), \texttt{features.py} (preprocessing), \texttt{split.py} (caption-grouped split), \texttt{metadata.py} and \texttt{validate.py} (data validation) and \texttt{modeling/} (embedding, training, leave-one-generator-out evaluation and learning curve). \texttt{config.py} holds all paths and loads \texttt{params.yaml}; \texttt{tracking.py} holds the MLflow helpers shared by the stages. \\
 \texttt{models/} & Trained models, produced by the pipeline and versioned with DVC \\
 \texttt{notebooks/} & Exploratory notebooks \\
 \texttt{docs/} & Dataset card and model card \\
 \texttt{reports/} & This report, the milestone write-ups and metrics (DVC metrics) \\
 \texttt{references/} & Background material \\
-\texttt{tests/} & Pytest suite \\
+\texttt{tests/} & Pytest suite: unit tests per stage and behavioural tests of the trained model \\
 Root files & \texttt{pyproject.toml} and \texttt{uv.lock} (environment); \texttt{dvc.yaml}, \texttt{dvc.lock} and \texttt{params.yaml} (pipeline); \texttt{Makefile}, \texttt{README.md} and \texttt{CONTRIBUTING.md} \\
 \bottomrule
 \end{tabularx}
 \end{table}
+
 
 The environment is managed with \textbf{uv} because it provides fast, reproducible dependency installation and keeps the project environment consistent across team members. The dependencies are declared in \texttt{pyproject.toml}, and the exact versions are locked in \texttt{uv.lock}, and the development tools (Pylint, Pytest, ...) are kept in a separate \texttt{dev} group, so \texttt{uv sync} rebuilds the same environment on any machine. The \texttt{Makefile} wraps the common tasks (\texttt{make data}, \texttt{make test}, \texttt{make lint}).
 \medskip
@@ -363,15 +356,15 @@ The structure keeps code, data, models and documentation apart, and since every 
 \subsubsection{Code versioning}
 \label{sec:code-versioning}
 
-The code is versioned with Git in a public repository of the course organisation, following GitHub Flow \texttt{main} is always deployable, and every change is implemented in its own branch and merged through a reviewed pull request. The main rules which are documented in \texttt{CONTRIBUTING.md}, are:
+The code is versioned with Git in a public repository of the course organisation on GitHub (\url{https://github.com/mlops-2627q1-mds-upc/MLOps-Vera}), following GitHub Flow: \texttt{main} is always deployable, and every change is implemented in its own branch and merged through a reviewed pull request. The main rules, which are documented in \texttt{CONTRIBUTING.md}, are:
 \medskip
 
 \begin{itemize}[nosep,leftmargin=1.4em]
-  \item \textbf{Branches:} one branch per Jira ticket, named \texttt{<type>/<Jira key>-<description>}, e.g.\ \texttt{feat/ KAN-12-mlflow-tracking}.
+  \item \textbf{Branches:} one branch per Jira ticket, named \texttt{<type>/<Jira key>-<description>}, e.g.\ \texttt{feat/\allowbreak KAN-12-mlflow-tracking}.
 
 \medskip
 
-  \item \textbf{Commits:} small, related changes, with messages following the \emph{Conventional Commits}~1.0.0  (\texttt{type (scope):description}), a body that explains what changed and why, and a Jira ticket \texttt{Refs: KAN-n} footer.
+  \item \textbf{Commits:} small, related changes, with messages following the \emph{Conventional Commits}~1.0.0  (\texttt{type(scope): description}), a body that explains what changed and why, and a Jira ticket \texttt{Refs: KAN-n} footer.
 
 \medskip
 
@@ -384,25 +377,52 @@ The code is versioned with Git in a public repository of the course organisation
 
 \medskip
 
-To minimise mistakes, GitHub enforces these rules instead of relying on discipline. We set the \texttt{main} to be protected and  only accept changes through a pull request with minimum one team member approval, and cannot be force-pushed or deleted. Pull requests are merged with a merge commit, so each member's commits stay in \texttt{main}, and merged branches are deleted automatically to keep the repository clean. Secret scanning with push protection blocks pushes that contain recognised credential formats, credentials are only kept in git-ignored local files (\texttt{.dvc/config.local}, \texttt{.env}), and \texttt{.gitignore} excludes data, caches and these local environments.
+To minimise mistakes, GitHub enforces these rules instead of relying on discipline. We set the \texttt{main} branch to be protected and only accept changes through a pull request with a minimum of one team member's approval, and it cannot be force-pushed or deleted. Pull requests are merged with a merge commit, so each member's commits stay in \texttt{main}, and merged branches are deleted automatically to keep the repository clean. Secret scanning with push protection blocks pushes that contain recognised credential formats; credentials are only kept in git-ignored local files (\texttt{.dvc/config.local}, \texttt{.env}), and \texttt{.gitignore} excludes data, caches and these local environments.
 
 \subsubsection{Data versioning}
-\guideline{(e.g., DVC)}
+\label{sec:data-versioning}
+
+The data, every intermediate output and the trained model are versioned with \textbf{DVC} as a pipeline. Git stores its definition (\texttt{dvc.yaml}), its parameters (\texttt{params.yaml}) and the md5 of every dependency and output (\texttt{dvc.lock}); the files themselves live in the DVC remote on DagsHub, the same free project that hosts MLflow ($\sim$760\,MB in total). Table~\ref{tab:pipeline} lists the stages.
+
+\begin{table}[H]
+\centering
+\small
+\caption{DVC pipeline. Each stage is one module of \texttt{mlops\_vera/}, with its parameters in \texttt{params.yaml}.}
+\label{tab:pipeline}
+\begin{tabularx}{\textwidth}{@{}l Y l@{}}
+\toprule
+\textbf{Stage} & \textbf{What it does} & \textbf{Output} \\
+\midrule
+\texttt{download} & Caption-grouped subsample of Defactify (800 captions, 7{,}734 images), pinned to a dataset commit & raw images (610\,MB) \\
+\texttt{preprocess} & Centre-crop, resize to 224\,px, re-encode as JPEG (removes shortcuts, DR-5) & images (130\,MB) \\
+\texttt{split} & 70/15/15 split by caption; fails if a caption appears in two splits (DR-4) & split CSVs \\
+\texttt{image\_metadata}, \texttt{validate\_data} & Image metadata table checked with Great Expectations (Section~\ref{sec:data-testing}) & table, metric \\
+\texttt{embed} & Frozen CLIP ViT-B/32 embedding of every image & embeddings (17\,MB) \\
+\texttt{train} & Logistic-regression head and decision threshold tuned on validation & model, metrics \\
+\texttt{logo@<generator>} ($\times$5), \texttt{logo\_summary} & Leave-one-generator-out evaluation (MR-4) & metrics, plot \\
+\texttt{learning\_curve} & Head re-trained on growing fractions of the training captions & plot \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Reproducibility.} The dataset is pinned to a Hugging Face commit and every random step takes its seed from \texttt{params.yaml}. \texttt{dvc pull} retrieves the exact files the pipeline produced (or only the 18\,MB of embeddings and splits needed to re-train the head), \texttt{dvc status} tells whether the workspace matches \texttt{dvc.lock}, and \texttt{dvc repro} re-runs only the stages whose code, parameters or inputs changed. Head experiments run as \texttt{dvc exp run -S train.C=\ldots}: each one is stored as a DVC experiment that can be shared with \texttt{dvc exp push}, so every value of the regularisation sweep can be restored. DVC hashes file bytes, and on Windows Git checked the scripts out with CRLF line endings, so every stage looked modified and \texttt{dvc repro} re-ran the pipeline from the download; a versioned \texttt{.gitattributes} now forces LF endings on every system, and the stages write their CSV outputs with LF as well.
+
+\paragraph{Scalability.} The amount of data is a single parameter (\texttt{data.n\_captions}): raising it and running \texttt{dvc repro} builds a larger dataset version, while DVC's content-addressed cache keeps both versions and stores unchanged files once. The expensive backbone pass is isolated in \texttt{embed}, so head experiments re-run in seconds. The leave-one-generator-out study is a \texttt{foreach} stage that expands into one branch per generator listed in \texttt{params.yaml}: the branches reuse the embeddings, DVC re-runs only those whose inputs changed, and a new generator only needs a new entry in the list. The \texttt{learning\_curve} stage checks whether the subsample is large enough: training on 25\% instead of 100\% of the captions costs about one point of balanced accuracy (0.925 vs.\ 0.935), less than the noise of the validation split, so more data would mainly narrow the confidence intervals of the evaluation rather than improve the model.
 
 \subsubsection{Experiment tracking}
 
 \paragraph{Tooling.} Training runs are tracked with \textbf{MLflow}, using the tracking server that \textbf{DagsHub} hosts for our repository (\url{https://dagshub.com/AdriSegurao/MLOps-Vera.mlflow}). The same DagsHub project already serves as our DVC remote, so code, data and experiments are browsable in one place, for free and shared by the whole team. Credentials live in a git-ignored \texttt{.env} file (template in \texttt{.env.example}); without it, runs fall back to a local SQLite store (\texttt{./mlflow.db}), so the pipeline and its tests never depend on the network.
 
-\paragraph{Integration with DVC.} Model building is split into two DVC stages. \texttt{embed} passes every preprocessed image through a \emph{frozen} pretrained backbone and stores one embedding per image and split. \texttt{train} fits a standardisation + logistic-regression head on those embeddings, tunes the decision threshold on validation (maximising balanced accuracy, as the model card specifies) and logs the run to MLflow. Keeping the costly forward pass in its own stage means that changing only head parameters re-runs \texttt{train} alone, in seconds. An experiment is a variation of \texttt{params.yaml} launched with \texttt{dvc exp run -S <param>=<value>}: DVC records the exact code, parameters, data hashes and metrics of each experiment as a Git reference (\texttt{dvc exp show}, \texttt{dvc exp push}), while MLflow provides the visual comparison and stores the artefacts. The test split is never read by \texttt{train}; it is reserved for the final evaluation, so that choosing between experiments cannot overfit it.
+\paragraph{Integration with DVC.} Every stage of the pipeline logs one MLflow run, so an execution can be followed end to end. The runs are grouped in four experiments: \texttt{vera-data} (\texttt{download} to \texttt{embed}: sample size, class balance, per-split counts, embedding throughput), \texttt{vera-baselines} (\texttt{train}), \texttt{vera-logo} (leave-one-generator-out) and \texttt{vera-learning-curve}. Model building is split into \texttt{embed}, which passes every image through a \emph{frozen} backbone once, and \texttt{train}, which fits a standardisation + logistic-regression head on the embeddings and tunes the decision threshold on validation (maximising balanced accuracy, MR-5); changing only the head therefore re-runs \texttt{train} alone, in seconds. An experiment is a variation of \texttt{params.yaml} launched with \texttt{dvc exp run -S <param>=<value>}: DVC records its code, parameters, data hashes and metrics (\texttt{dvc exp show}), while MLflow provides the visual comparison and stores the artefacts. The test split is never read by \texttt{train}, so choosing between experiments cannot overfit it.
 
 \paragraph{What each run records.}
 \begin{itemize}[nosep,leftmargin=1.4em]
-  \item \textbf{Parameters:} the \texttt{embed} (backbone, batch size) and \texttt{train} (C, class weighting, iterations, seed) sections of \texttt{params.yaml}.
-  \item \textbf{Metrics} on train and validation: the model-card metrics (balanced accuracy, macro-F1, PR-AUC and recall of the minority real class), plus ROC-AUC, the recall of each generator and the tuned threshold.
-  \item \textbf{Traceability tags:} the pinned dataset revision, the DVC hash of the embeddings the head was trained on, and the backbone weights; MLflow adds the Git commit. Any run can therefore be tied to the exact code and data that produced it.
-  \item \textbf{Artefacts:} the validation confusion matrix and precision--recall curve, and the fitted model with its input signature. The tuned threshold is baked into the logged model (scikit-learn's \texttt{FixedThresholdClassifier}), so its \texttt{predict()} gives the same decisions as the DVC-versioned model.
+  \item \textbf{Parameters:} the stage's section of \texttt{params.yaml}, e.g.\ backbone and batch size for \texttt{embed}, or C, class weighting, iterations and seed for \texttt{train}.
+  \item \textbf{Metrics:} for \texttt{train}, on train and validation, the model-card metrics (balanced accuracy, macro-F1, PR-AUC and recall of the minority real class), plus ROC-AUC, the recall of each generator and the tuned threshold.
+  \item \textbf{Lineage tags:} the stage (\texttt{dvc.stage}, e.g.\ \texttt{logo@sd3}), the pinned dataset revision, the DVC hash of every input read from \texttt{dvc.lock}, the backbone weights, and the DVC experiment name when run by \texttt{dvc exp run}; MLflow adds the Git commit. Any run can therefore be tied to the exact code and data that produced it.
+  \item \textbf{Artefacts:} for \texttt{train}, the validation confusion matrix and precision--recall curve, and the fitted model with its input signature. The tuned threshold is baked into the logged model (scikit-learn's \texttt{FixedThresholdClassifier}), so its \texttt{predict()} gives the same decisions as the DVC-versioned model.
 \end{itemize}
-Runs are named \texttt{<backbone>-logreg-<balanced|unweighted>-C<C>} so they can be told apart at a glance in the MLflow UI.
+Training runs are named \texttt{<backbone>-logreg-<balanced|unweighted>-C<C>} so they can be told apart at a glance in the MLflow UI.
 
 % TODO: add a screenshot of the DagsHub MLflow run comparison, e.g.
 % \begin{figure}[h]\centering
@@ -415,6 +435,7 @@ Runs are named \texttt{<backbone>-logreg-<balanced|unweighted>-C<C>} so they can
 \begin{table}[h]
 \centering
 \small
+\setlength{\tabcolsep}{3.5pt}
 \caption{Baseline experiments (validation split, 1{,}254 images: 209 real, 1{,}045 AI).}
 \label{tab:baselines}
 \begin{tabular}{@{}llccccc@{}}
@@ -455,13 +476,13 @@ ResNet-18 & balanced & 0.708 & 0.713 & 0.646 & 0.837 & 0.770 \\
   \item \textbf{The backbone dominates.} CLIP improves balanced accuracy by about 10 points over both ResNets and raises the PR-AUC of the real class from 0.56--0.66 to 0.90. It is the only backbone that meets MR-1 (balanced accuracy $\geq 0.85$). This is consistent with prior work showing that frozen CLIP features, learnt from web-scale image--text pairs, transfer well to generated-image detection (Ojha et al., CVPR 2023).
   \item \textbf{A bigger ImageNet backbone barely helps.} ResNet-50 gains one point over ResNet-18 but overfits more (0.96 train vs.\ 0.82 validation balanced accuracy); CLIP shows the smallest gap (0.96 vs.\ 0.92).
   \item \textbf{Class weighting hardly changes the scores.} Tuning the threshold on validation already compensates for the imbalance, so weighted and unweighted heads differ by less than one point, which is within noise for 209 real validation images.
-  \item \textbf{SD~3 is the hardest generator} for every backbone (0.79 recall with CLIP), while SDXL and DALL-E~3 are the easiest; per-generator results will be studied further with the leave-one-generator-out experiment (MR-4).
+  \item \textbf{SD~3 is the hardest generator} for every backbone (0.79 recall with CLIP), while SDXL and DALL-E~3 are the easiest; the leave-one-generator-out evaluation below confirms it.
 \end{itemize}
 We keep \textbf{CLIP ViT-B/32} as backbone and \textbf{balanced class weights}: although the scores barely differ here, weighting makes the head independent of the class ratio, so it can be retrained on data with a different imbalance without retuning.
 
-\paragraph{Regularisation sweep.} With C~$=1$ the CLIP head fits the training set almost perfectly (train ROC-AUC 1.000 vs.\ 0.970 on validation). Since the embeddings are cached, a sweep of C only re-runs \texttt{train} (a few seconds per run); Table~\ref{tab:c-sweep} shows that stronger regularisation narrows the gap and improves every validation metric, with C~$=0.01$ best. It also brings the tuned threshold down from 0.99 to 0.57, i.e.\ the balanced head's probabilities are better calibrated.
+\paragraph{Regularisation sweep.} With C~$=1$ the CLIP head fits the training set almost perfectly (train ROC-AUC 1.000 vs.\ 0.970 on validation). Since the embeddings are cached, a sweep of C only re-runs \texttt{train} (a few seconds per run); Table~\ref{tab:c-sweep} shows that stronger regularisation narrows the gap and improves the validation metrics down to C~$=0.01$, and brings the tuned threshold from 0.99 towards 0.5, i.e.\ the balanced head's probabilities are better calibrated. As 0.01 was the smallest value tried, the sweep was extended to 0.003 and 0.001: below 0.01 balanced accuracy changes by at most 0.002, far below the noise of the validation split ($\pm$2 points with 209 real images), so we keep C~$=0.01$ rather than pick a winner by noise.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \small
 \caption{Regularisation sweep of the CLIP ViT-B/32 head with balanced class weights (validation split).}
@@ -475,68 +496,129 @@ We keep \textbf{CLIP ViT-B/32} as backbone and \textbf{balanced class weights}: 
 0.1 & 0.919 & 0.871 & 0.910 & 0.919 & 0.999 / 0.976 & 0.707 \\
 0.03 & 0.931 & 0.877 & 0.924 & 0.943 & 0.999 / 0.980 & 0.688 \\
 \textbf{0.01} & \textbf{0.935} & \textbf{0.884} & \textbf{0.933} & 0.947 & 0.998 / 0.982 & 0.570 \\
+0.003 & 0.937 & 0.887 & 0.937 & 0.947 & 0.995 / 0.984 & 0.509 \\
+0.001 & 0.935 & 0.900 & 0.937 & 0.928 & 0.992 / 0.984 & 0.427 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 The selected model is therefore \textbf{CLIP ViT-B/32 + logistic regression with balanced class weights and C~$=0.01$}, which meets all four validation targets (MR-1--MR-3); it is the configuration committed in \texttt{params.yaml} and versioned with DVC.
 
+\paragraph{Cross-generator generalisation (MR-4).} To simulate a new generator appearing in production, each \texttt{logo@<generator>} branch re-trains the selected head without one generator (in train and validation, threshold tuning included) and tests it on the test split's real images plus that generator's images only (188 + 188 images). The 95\% confidence intervals come from a bootstrap that resamples whole captions, since images of the same caption show the same scene. Table~\ref{tab:logo} shows that MR-4 is met: the worst case is SD~3 with 0.822 (mean 0.898). Real images stay well recognised; what drops is the detection of the unseen generator, and above all of SD~3 (67\% of its images detected, against 85\% when it is part of training), while SDXL, DALL-E~3 and MidJourney stay close to their in-distribution results.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Leave-one-generator-out evaluation of the selected head (test split).}
+\label{tab:logo}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Held-out generator} & \textbf{Balanced acc.\ (95\% CI)} & \textbf{Recall of the unseen generator} & \textbf{Recall (real)} \\
+\midrule
+SD 2.1 & 0.872 (0.827--0.914) & 0.814 & 0.931 \\
+SDXL & 0.957 (0.936--0.977) & 0.984 & 0.931 \\
+\textbf{SD 3} & \textbf{0.822 (0.765--0.872)} & \textbf{0.670} & 0.973 \\
+DALL-E 3 & 0.923 (0.884--0.956) & 0.920 & 0.926 \\
+MidJourney & 0.915 (0.880--0.948) & 0.904 & 0.926 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 % ----- 2.3 Milestone 3 -----
 \subsection{Milestone 3: Model Building -- Quality Assurance}
-\guideline{Describe how the different software engineering practices and tools have been applied.}
+In Milestone~3 we checked the quality of the three things the pipeline produces: the code (static analysis), the data (validation with Great Expectations) and the model (behavioural tests). All checks run with one command, \texttt{make qa}, and the data validation is itself a pipeline stage, so \texttt{dvc repro} stops on bad data.
 
 \subsubsection{Energy efficiency awareness}
-\guideline{(e.g., CodeCarbon) Reason about the energy efficiency of your ML component.}
+\fillin{CodeCarbon is not integrated in the pipeline yet. To be completed: how emissions are measured (e.g.\ CodeCarbon around \texttt{embed} and \texttt{train}, logged to MLflow), the energy and CO$_2$eq of a full retraining against NFR-4 ($\leq$ 5\,g), and the reflection on efficiency.} Our design choices already keep the cost low: the backbone is frozen and runs once in \texttt{embed} (CPU only), its embeddings are cached by DVC, so every head experiment, the regularisation sweep, the five leave-one-generator-out branches and the learning curve re-use them and take seconds; and the learning curve shows that more data would add little accuracy for proportionally more compute.
 
 \subsubsection{Static code analysis}
-\guideline{(e.g., pylint)}
+\label{sec:static-analysis}
+We combine three linters, each run by \texttt{make lint} or \texttt{make nblint}:
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \textbf{Ruff} formats the code and sorts the imports. Its configuration only covered the package, so we extended it to \texttt{tests/}, which revealed long lines and files opened without a context manager.
+  \item \textbf{Pylint} adds design and documentation checks. It rated the code \textbf{8.82/10}; it now rates it \textbf{10.00/10}. We fixed the findings rather than silencing them: missing docstrings (which are also the \texttt{-{}-help} text of every stage), MLflow code duplicated between \texttt{train} and \texttt{logo} (moved into a shared helper), and two unused Cookiecutter placeholders (\texttt{plots.py}, \texttt{predict.py}). The few deviations from the defaults are configured in \texttt{pyproject.toml}, each with its reason: Ruff's line length, scikit-learn's \texttt{X} names, no docstrings required on test functions, and slightly larger limits for the stage scripts, which are linear by nature.
+  \item \textbf{Pynblint} checks the notebooks and the repository. It reports no issue in our exploratory notebook; at repository level its only finding was missing test-coverage data, which led us to measure coverage with \texttt{pytest-cov}. It pins old versions of its dependencies that conflict with ours, so it runs as an isolated tool (\texttt{uvx}).
+\end{itemize}
+Several edited scripts are DVC dependencies, so the docstrings alone would have re-run the whole pipeline. Since only documentation changed, we recorded the new script hashes with \texttt{dvc commit} after checking that re-training reproduces the saved model (a test of Section~\ref{sec:model-testing}).
 
 \subsubsection{Model testing}
-\guideline{(e.g., pytest)}
+\label{sec:model-testing}
+The Pytest suite has 75 tests and covers 97\% of the package (NFR-3 asks for $\geq$ 80\%). \textbf{Unit tests} run offline on small synthetic data and check every stage: the caption-grouped selection and split (no caption in two splits), the preprocessing output, the threshold tuning, the metrics, the MLflow logging and the leave-one-generator-out filtering. \textbf{Behavioural tests} run on the real artefacts (the saved model, the embeddings and the images) and check that the model we ship behaves as documented (Table~\ref{tab:model-tests}). They are marked \texttt{model}, so \texttt{pytest -m "not model"} keeps a fast offline run, and they are skipped when the artefacts have not been pulled.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Behavioural tests of the trained model.}
+\label{tab:model-tests}
+\begin{tabularx}{\textwidth}{@{}Y l l@{}}
+\toprule
+\textbf{Test} & \textbf{Requirement} & \textbf{Result} \\
+\midrule
+Model-card targets on validation & MR-1--MR-3 & bal.\ acc.\ 0.935, F1 0.884 \\
+Each generator detected at $\geq$ 80\% & model card & 0.85 (SD 3) to 0.98 \\
+Decisions use the threshold tuned on validation, not 0.5 & MR-5 & threshold 0.570 \\
+Re-training reproduces the saved model & NFR-12 & probabilities within $2 \times 10^{-6}$ \\
+Serving path (raw image $\rightarrow$ preprocessing $\rightarrow$ CLIP) gives the training embeddings & FR-5 & difference $< 10^{-5}$ \\
+$\geq$ 90\% of decisions unchanged by mirroring, JPEG re-compression (quality 75 and 50), +10\% brightness or a half-resolution upload & robustness & 96--99\% unchanged \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The invariance threshold (90\%) was set after measuring the actual agreement on 60 real and 60 AI validation images, so the tests catch regressions without failing on normal variation. The serving-path test protects FR-5 before the API is built: preprocessing a raw image as the service will do yields the same embedding as in training, so there is no training/serving skew.
 
 \subsubsection{Data testing}
-\guideline{(e.g., Great Expectations, Deepchecks)}
+\label{sec:data-testing}
+Great Expectations validates tables, and our data are images. We therefore turn every image into one row of metadata (stage \texttt{image\_metadata}): whether the raw and the preprocessed file open, their format, colour mode, size and file size, plus the brightness, contrast and md5 hash of the preprocessed image, its labels and its split. The stage \texttt{validate\_data} checks four tables derived from it with Great Expectations, 32 expectations in total (Table~\ref{tab:suites}); the thresholds live in \texttt{params.yaml}, next to the values observed on our data.
 
-% ----- 2.4 Milestone 4 -----
-\subsection{Milestone 4: Model deployment -- API}
-\guideline{Describe how you have deployed your model and the technologies used.}
+\begin{table}[H]
+\centering
+\small
+\caption{Expectation suites of the \texttt{validate\_data} stage.}
+\label{tab:suites}
+\begin{tabularx}{\textwidth}{@{}l l Y@{}}
+\toprule
+\textbf{Suite} & \textbf{One row per} & \textbf{Main expectations} \\
+\midrule
+\texttt{images} & image (7{,}734) & unique ids; labels valid and consistent (a real photo has no generator); every file opens; plausible raw sizes; preprocessed images are 224$\times$224 RGB JPEGs, neither black, white nor flat; no duplicate files; $\sim$5 AI images per real one (DR-8) \\
+\texttt{captions} & caption (800) & each caption in exactly one split (DR-4) and with all six sources \\
+\texttt{splits} & split (3) & share of real images, all generators present, size matching the split fractions \\
+\texttt{shortcuts} & image feature & no preprocessed-image feature alone predicts the label: ROC-AUC $\leq$ 0.60 (DR-5) \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
-\subsubsection{ML-based component/system architecture}
-\guideline{Description of the physical and logical architectures of the system, including diagrams. Design patterns used. Selection and justification of design decisions (e.g., cloud provider).}
-
-\subsubsection{API design}
-\guideline{(e.g., FastAPI)}
-
-\subsubsection{API testing}
-\guideline{(e.g., FastAPI, pytest)}
-
-% ----- 2.5 Milestone 5 -----
-\subsection{Milestone 5: Model deployment -- Model packaging}
-\guideline{Describe how the different software engineering practices and tools have been applied.}
-
-\subsubsection{Container and Orchestration}
-\guideline{(e.g., Docker, Docker compose)}
-
-\subsubsection{CI/CD}
-\guideline{(e.g., GitHub Actions)}
-
-% ----- 2.6 Milestone 6 -----
-\subsection{Milestone 6: Monitoring}
-\guideline{Describe how the different software engineering practices and tools have been applied.}
-
-\subsubsection{Resource monitoring}
-\guideline{(e.g., Grafana, Prometheus)}
-
-\subsubsection{Model performance}
-\guideline{(e.g., Alibi Detect)}
-
-\subsubsection{Cycle: Feedback loops and retraining}
-\guideline{Description of all the stages of the system pipeline, and how they are connected. Explain how the pipeline can be used to automate the retraining process.}
+The \texttt{shortcuts} suite turns DR-5 into a check. On the raw images, the aspect ratio alone separates real from AI images with a ROC-AUC of 0.75 (in our subsample every AI image is square, against 2.4\% of the real photos); after preprocessing, no metadata feature exceeds 0.55 (file size 0.52, brightness 0.55, contrast 0.53), which confirms that preprocessing removes the shortcut. All 32 expectations pass on our data. The stage fails if any expectation fails, so \texttt{dvc repro} stops before bad data reaches the model; it writes a summary that DVC tracks as a metric and the HTML \emph{Data Docs} of Great Expectations for inspection. To make sure the suites can actually catch problems, unit tests corrupt synthetic metadata in nine ways (non-square, black or flat image, label mismatch, caption leakage, duplicate or unreadable file, a generator missing from a split, and a file-size shortcut) and check that each one fails the suite meant to catch it.
 
 % ===================== 3. SELF-EVALUATION ==========================
 \section{Self-evaluation of the project (retrospective)}
-\guideline{To do in the final deliverable.}
-\guideline{Explain the main challenges, barriers, and opportunities you encountered during the project. Describe what you have learned, what you would do differently, etc.}
-\guideline{Explain what concepts you have used from other courses.}
+\textit{Retrospective of Milestones 1--3; it will be completed in the final deliverable.}
+
+\paragraph{Challenges and barriers.}
+\begin{itemize}[nosep,leftmargin=1.4em]
+  \item \textbf{The data hid easy shortcuts.} The exploratory analysis showed that image shape alone gives the label away and that captions are shared across the original splits. Without the preprocessing and the caption-grouped re-split, the model would have looked far better than it is; the \texttt{shortcuts} and \texttt{captions} suites now check both automatically.
+  \item \textbf{Reproducibility across machines.} The team works on macOS and Windows. Line endings changed the hashes DVC relies on, and a change to a file shared by every stage invalidates the whole pipeline, so we had to understand exactly what DVC hashes before trusting \texttt{dvc status}.
+  \item \textbf{Tools designed for tabular data.} Great Expectations and Pynblint assume tables and recent dependencies: we validated images through their metadata, and ran Pynblint as an isolated tool.
+\end{itemize}
+
+\paragraph{Opportunities and lessons learned.} Caching the expensive step (the frozen backbone) made every experiment cheap, which let us try many configurations, extend the regularisation sweep and evaluate each held-out generator in seconds. Writing requirements with measurable targets in Milestone~1 paid off: most tests and expectations of Milestone~3 check one of them directly. Reviewed pull requests with small commits made every change easy to follow and to revert. \fillin{the team's own lessons and what it would do differently}
+
+\paragraph{Concepts from other courses.} \fillin{courses of the master whose concepts were used, e.g.\ machine learning (transfer learning, class imbalance, threshold tuning, bootstrap confidence intervals) and data engineering}
+
+% ============================ ANNEXES ===============================
+\clearpage
+\appendix
+\section{Engineering Decision Notebook}
+\label{app:edn}
+
+This annex documents a selection of relevant engineering decisions made during the project, with particular attention to the role of AI in each of them, following the course's EDN instructions (v2026.0.2). An entry is created when a decision could reasonably have been made differently and has meaningful consequences for the project, or when AI contributed significantly to it. Each entry records: milestone, activity or topic, decision participants, decision, rationale, AI involvement (none, information seeking, alternative generation, alternative assessment, recommendation, solution generation or other), response to AI (accepted, accepted with modifications, rejected, used as input for further analysis or other), assessment of the AI contribution, and evidence of the AI interaction and of the project artefacts involved.
+
+\subsection{Milestone 1: Inception}
+\fillin{EDN entries of Milestone 1}
+
+\subsection{Milestone 2: Reproducibility}
+\fillin{EDN entries of Milestone 2}
+
+\subsection{Milestone 3: Quality assurance}
+\fillin{EDN entries of Milestone 3}
 
 \end{document}

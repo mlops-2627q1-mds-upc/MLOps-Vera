@@ -362,3 +362,9 @@ isolated `uvx` tool because it pins an old `typer` that conflicts with ours (and
 4. **Model deployment — API** — ML system design, REST API (FastAPI), API testing
 5. **Model deployment — packaging** — containerization (Docker), CI/CD (GitHub Actions)
 6. **Monitoring** — resource monitoring (Prometheus + Grafana), data & model drift (Alibi Detect)
+
+## Licence
+
+The code and the trained model are released under the [MIT licence](LICENSE). The data is not part of the repository: the
+Defactify dataset is licensed under CC BY 4.0 and its real images follow MS COCO's terms (see the
+[dataset card](docs/dataset_card.md)).

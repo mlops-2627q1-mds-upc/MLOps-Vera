@@ -4,7 +4,7 @@ Unlike the unit tests of `train`, these run on the real pipeline artefacts: the 
 the embeddings and the images. They check that the model
 
 - meets the model-card targets on validation (MR-1 to MR-3) and detects every generator;
-- classifies at the threshold tuned on validation (MR-5), and retraining reproduces it (MR-6);
+- classifies at the threshold tuned on validation (MR-5), and retraining reproduces it (NFR-12);
 - gives the same embeddings when an image goes through the serving path (raw image ->
   `preprocess_image` -> backbone), i.e. no training/serving skew (FR-5);
 - keeps its decision under perturbations that do not change whether an image is real or
