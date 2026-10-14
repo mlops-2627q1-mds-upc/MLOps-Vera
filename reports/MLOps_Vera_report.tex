@@ -529,7 +529,37 @@ MidJourney & 0.915 (0.880--0.948) & 0.904 & 0.926 \\
 In Milestone~3 we checked the quality of the three things the pipeline produces: the code (static analysis), the data (validation with Great Expectations) and the model (behavioural tests). All checks run with one command, \texttt{make qa}, and the data validation is itself a pipeline stage, so \texttt{dvc repro} stops on bad data.
 
 \subsubsection{Energy efficiency awareness}
-\fillin{CodeCarbon is not integrated in the pipeline yet. To be completed: how emissions are measured (e.g.\ CodeCarbon around \texttt{embed} and \texttt{train}, logged to MLflow), the energy and CO$_2$eq of a full retraining against NFR-4 ($\leq$ 5\,g), and the reflection on efficiency.} Our design choices already keep the cost low: the backbone is frozen and runs once in \texttt{embed} (CPU only), its embeddings are cached by DVC, so every head experiment, the regularisation sweep, the five leave-one-generator-out branches and the learning curve re-use them and take seconds; and the learning curve shows that more data would add little accuracy for proportionally more compute.
+\paragraph{How we measure.} Every stage is measured with \textbf{CodeCarbon}. Rather than wrapping a few lines by hand, the \texttt{main} function of every stage is decorated with \texttt{@track\_emissions} (\texttt{mlops\_vera/tracking.py}): the measurement spans the whole stage, a failed stage is measured too, and the result is added to the stage's MLflow run as \texttt{codecarbon.*} metrics (CO$_2$eq, energy split into CPU, RAM and GPU, CPU power, duration) and tags (country, CPU model, CodeCarbon version), besides a row in a local \texttt{emissions.csv}. A new stage only needs the decorator. The tracker runs in \emph{offline} mode: the carbon intensity is the average of the Spanish grid (\texttt{codecarbon.country\_iso\_code: ESP} in \texttt{params.yaml}, 174\,g CO$_2$eq/kWh in CodeCarbon's data), so no IP geolocation request is made and the figures do not depend on where the network says we are. Our machine (WSL2) does not expose the CPU's energy counters (RAPL), so CodeCarbon \emph{estimates} the CPU power from its rated power (TDP, 120\,W for the AMD Ryzen 7 9800X3D) times its load, sampled every 15\,s, with a floor of 10\% of the TDP; RAM is estimated at 10\,W, and no GPU is used. The figures are therefore estimates, good for comparing stages and runs, not exact measurements.
+
+\paragraph{Results.} Table~\ref{tab:emissions} gives the last run of each stage. A full retraining (\texttt{embed} + \texttt{train}) emits \textbf{0.59\,g CO$_2$eq (3.4\,Wh)} in about two minutes, so NFR-4 ($\leq$ 5\,g) is met with a margin of more than eight times; re-training only the head, which is what every experiment of Milestone~2 did, emits 0.02\,g. The whole pipeline, from the download to the learning curve, emits about 1.1\,g (6.2\,Wh) in nine minutes. \texttt{embed} accounts for half of it: it is the only stage that loads the CPU fully ($\sim$92\,W, against the 12\,W floor of most other stages). The download comes second only because it is long: it waits on the network, and CodeCarbon charges the idle CPU at its floor power while it waits.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Energy and emissions per stage (CodeCarbon estimate, Spanish grid, AMD Ryzen 7 9800X3D).}
+\label{tab:emissions}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Stage} & \textbf{Duration (s)} & \textbf{Energy (Wh)} & \textbf{CO$_2$eq (g)} \\
+\midrule
+\texttt{download} & 238 & 1.45 & 0.253 \\
+\texttt{preprocess} & 46 & 0.28 & 0.049 \\
+\texttt{split} & 7 & 0.04 & 0.007 \\
+\texttt{image\_metadata} & 14 & 0.08 & 0.015 \\
+\texttt{validate\_data} & 7 & 0.04 & 0.008 \\
+\texttt{embed} & 102 & 3.25 & 0.567 \\
+\texttt{train} & 21 & 0.13 & 0.022 \\
+\texttt{logo} (5 branches) & 75 & 0.46 & 0.079 \\
+\texttt{logo\_summary} & 7 & 0.04 & 0.008 \\
+\texttt{learning\_curve} & 24 & 0.37 & 0.065 \\
+\midrule
+\textbf{Full retraining} (\texttt{embed} + \texttt{train}) & \textbf{122} & \textbf{3.38} & \textbf{0.588} \\
+Whole pipeline & 539 & 6.16 & 1.072 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Reflection.} The cost is low by design: the backbone is frozen and runs once in \texttt{embed} (CPU only), and its embeddings are cached by DVC, so every head experiment, the regularisation sweep, the five leave-one-generator-out branches and the learning curve re-use them and take seconds; fine-tuning CLIP would have re-run the expensive pass for every experiment. The learning curve also shows that more data would add little accuracy for proportionally more compute, and since \texttt{embed} dominates the cost, a larger dataset or a bigger backbone would raise the emissions of a retraining roughly in proportion; NFR-4 leaves room for that.
 
 \subsubsection{Static code analysis}
 \label{sec:static-analysis}
