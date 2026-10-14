@@ -30,7 +30,7 @@ import typer
 from mlops_vera.config import EMBEDDINGS_DIR, METRICS_DIR, SPLITS_DIR, load_params
 from mlops_vera.modeling.captions import load_captions
 from mlops_vera.modeling.train import GENERATORS, build_model, evaluate, load_split, tune_threshold
-from mlops_vera.tracking import stage_run
+from mlops_vera.tracking import stage_run, track_emissions
 
 app = typer.Typer()
 GENERATOR_IDS = {name: g for g, name in GENERATORS.items()}
@@ -74,6 +74,7 @@ def bootstrap_ci(
 
 
 @app.command()
+@track_emissions
 def main(
     holdout: str,
     embeddings_dir: Path = EMBEDDINGS_DIR,

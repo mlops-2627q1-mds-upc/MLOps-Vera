@@ -22,7 +22,7 @@ from tqdm import tqdm
 import typer
 
 from mlops_vera.config import INTERIM_DATA_DIR, PREPROCESSED_DIR, RAW_DEFACTIFY_DIR, SPLITS_DIR
-from mlops_vera.tracking import stage_run
+from mlops_vera.tracking import stage_run, track_emissions
 
 app = typer.Typer()
 IMAGE_METADATA_PATH = INTERIM_DATA_DIR / "image_metadata.csv"
@@ -103,6 +103,7 @@ def build_metadata(raw_dir: Path, processed_dir: Path, splits_dir: Path) -> pd.D
 
 
 @app.command()
+@track_emissions
 def main(
     raw_dir: Path = RAW_DEFACTIFY_DIR,
     processed_dir: Path = PREPROCESSED_DIR,

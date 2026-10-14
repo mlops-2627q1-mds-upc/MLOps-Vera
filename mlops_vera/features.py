@@ -19,7 +19,7 @@ from tqdm import tqdm
 import typer
 
 from mlops_vera.config import PREPROCESSED_DIR, RAW_DEFACTIFY_DIR, load_params
-from mlops_vera.tracking import stage_run
+from mlops_vera.tracking import stage_run, track_emissions
 
 app = typer.Typer()
 
@@ -57,6 +57,7 @@ def plot_caption_group(meta: pd.DataFrame, images_dir: Path) -> Figure:
 
 
 @app.command()
+@track_emissions
 def main(
     input_dir: Path = RAW_DEFACTIFY_DIR,
     output_dir: Path = PREPROCESSED_DIR,

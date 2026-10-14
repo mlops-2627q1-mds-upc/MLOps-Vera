@@ -24,7 +24,7 @@ from tqdm import tqdm
 import typer
 
 from mlops_vera.config import RAW_DEFACTIFY_DIR, load_params
-from mlops_vera.tracking import stage_run
+from mlops_vera.tracking import stage_run, track_emissions
 
 app = typer.Typer()
 
@@ -126,6 +126,7 @@ def _save(raw: bytes, shard: str, row: int, meta: pd.Series, img_dir: Path) -> d
 
 
 @app.command()
+@track_emissions
 def main(output_dir: Path = RAW_DEFACTIFY_DIR, experiment: str = "vera-data"):
     """Download the caption-grouped Defactify subsample defined in params.yaml (`data`)."""
     p = load_params("data")

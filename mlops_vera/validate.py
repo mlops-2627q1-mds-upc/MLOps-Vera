@@ -33,7 +33,7 @@ import typer
 
 from mlops_vera.config import METRICS_DIR, RAW_DEFACTIFY_DIR, REPORTS_DIR, load_params
 from mlops_vera.metadata import IMAGE_METADATA_PATH
-from mlops_vera.tracking import stage_run
+from mlops_vera.tracking import stage_run, track_emissions
 
 app = typer.Typer()
 DATA_DOCS_DIR = REPORTS_DIR / "data_docs"  # Great Expectations HTML report (git-ignored)
@@ -285,6 +285,7 @@ def build_suites(p: dict, n_images: int, img_size: int) -> dict:
 
 
 @app.command()
+@track_emissions
 def main(
     metadata_path: Path = IMAGE_METADATA_PATH,
     source_path: Path = RAW_DEFACTIFY_DIR / "source.json",

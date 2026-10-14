@@ -22,7 +22,7 @@ import typer
 from mlops_vera.config import EMBEDDINGS_DIR, METRICS_DIR, SPLITS_DIR, load_params
 from mlops_vera.modeling.captions import load_captions
 from mlops_vera.modeling.train import build_model, evaluate, load_split, tune_threshold
-from mlops_vera.tracking import stage_run
+from mlops_vera.tracking import stage_run, track_emissions
 
 app = typer.Typer()
 METRICS = ["balanced_accuracy", "roc_auc", "pr_auc_real", "f1_macro"]
@@ -77,6 +77,7 @@ def plot_curve(table: pd.DataFrame) -> Figure:
 
 
 @app.command()
+@track_emissions
 def main(
     embeddings_dir: Path = EMBEDDINGS_DIR,
     splits_dir: Path = SPLITS_DIR,

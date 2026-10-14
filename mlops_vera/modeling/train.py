@@ -46,7 +46,7 @@ from mlops_vera.config import (
     METRICS_DIR,
     load_params,
 )
-from mlops_vera.tracking import stage_run
+from mlops_vera.tracking import stage_run, track_emissions
 
 app = typer.Typer()
 
@@ -127,6 +127,7 @@ def plot_pr_curve(y: np.ndarray, scores: np.ndarray) -> Figure:
 
 
 @app.command()
+@track_emissions
 def main(
     embeddings_dir: Path = EMBEDDINGS_DIR,
     model_path: Path = CLASSIFIER_PATH,

@@ -9,12 +9,12 @@ stages:
       size: 1624
     - path: mlops_vera/dataset.py
       hash: md5
-      md5: 2fab4c67f705491fa1a5246893628a59
-      size: 6667
+      md5: 73809b8164ebacaf38297b54c6cb4e42
+      size: 6701
     - path: mlops_vera/tracking.py
       hash: md5
-      md5: b5a84fe8b0ee29147e29447a5b919fa2
-      size: 2659
+      md5: 6f44ad033abb8c3be8105ae775b0f7bb
+      size: 5865
     params:
       params.yaml:
         data:
@@ -43,12 +43,12 @@ stages:
       size: 1624
     - path: mlops_vera/features.py
       hash: md5
-      md5: da3351457969f71217e35cfcd9e2eff3
-      size: 3700
+      md5: a11bde7c80fb8b62e2d25bb4da1fb5e5
+      size: 3734
     - path: mlops_vera/tracking.py
       hash: md5
-      md5: b5a84fe8b0ee29147e29447a5b919fa2
-      size: 2659
+      md5: 6f44ad033abb8c3be8105ae775b0f7bb
+      size: 5865
     params:
       params.yaml:
         preprocess:
@@ -74,12 +74,12 @@ stages:
       size: 1624
     - path: mlops_vera/split.py
       hash: md5
-      md5: edb222d7870128d2d2c6586fc58c56c5
-      size: 3312
+      md5: e07fe2bcc18a54221091c93d52ce24c3
+      size: 3346
     - path: mlops_vera/tracking.py
       hash: md5
-      md5: b5a84fe8b0ee29147e29447a5b919fa2
-      size: 2659
+      md5: 6f44ad033abb8c3be8105ae775b0f7bb
+      size: 5865
     params:
       params.yaml:
         split:
@@ -116,12 +116,12 @@ stages:
       size: 1624
     - path: mlops_vera/modeling/embed.py
       hash: md5
-      md5: 86ad2c73470401cb81931c0c61eb7b45
-      size: 6828
+      md5: 34c86d6bb62478c42076eafbd1d997de
+      size: 6862
     - path: mlops_vera/tracking.py
       hash: md5
-      md5: b5a84fe8b0ee29147e29447a5b919fa2
-      size: 2659
+      md5: 6f44ad033abb8c3be8105ae775b0f7bb
+      size: 5865
     - path: reports/metrics/data_validation.json
       hash: md5
       md5: e8d97d32f183640097aa0e02eac2d088
@@ -151,12 +151,12 @@ stages:
       size: 1624
     - path: mlops_vera/modeling/train.py
       hash: md5
-      md5: a0e16c4e53310e19d3978cbcc7210afe
-      size: 8169
+      md5: 341f49d77795d816294d43aeb67227f9
+      size: 8203
     - path: mlops_vera/tracking.py
       hash: md5
-      md5: b5a84fe8b0ee29147e29447a5b919fa2
-      size: 2659
+      md5: 6f44ad033abb8c3be8105ae775b0f7bb
+      size: 5865
     params:
       params.yaml:
         train:
@@ -196,16 +196,16 @@ stages:
       size: 776
     - path: mlops_vera/modeling/logo.py
       hash: md5
-      md5: 471256341910c4f2089ec2237e1ab33c
-      size: 6270
+      md5: 5dc9e06c8b842d3d9ce8c4b23a8de5a4
+      size: 6304
     - path: mlops_vera/modeling/train.py
       hash: md5
-      md5: a0e16c4e53310e19d3978cbcc7210afe
-      size: 8169
+      md5: 341f49d77795d816294d43aeb67227f9
+      size: 8203
     - path: mlops_vera/tracking.py
       hash: md5
-      md5: b5a84fe8b0ee29147e29447a5b919fa2
-      size: 2659
+      md5: 6f44ad033abb8c3be8105ae775b0f7bb
+      size: 5865
     params:
       params.yaml:
         logo.n_bootstrap: 1000
@@ -243,16 +243,16 @@ stages:
       size: 776
     - path: mlops_vera/modeling/logo.py
       hash: md5
-      md5: 471256341910c4f2089ec2237e1ab33c
-      size: 6270
+      md5: 5dc9e06c8b842d3d9ce8c4b23a8de5a4
+      size: 6304
     - path: mlops_vera/modeling/train.py
       hash: md5
-      md5: a0e16c4e53310e19d3978cbcc7210afe
-      size: 8169
+      md5: 341f49d77795d816294d43aeb67227f9
+      size: 8203
     - path: mlops_vera/tracking.py
       hash: md5
-      md5: b5a84fe8b0ee29147e29447a5b919fa2
-      size: 2659
+      md5: 6f44ad033abb8c3be8105ae775b0f7bb
+      size: 5865
     params:
       params.yaml:
         logo.n_bootstrap: 1000
@@ -290,16 +290,16 @@ stages:
       size: 776
     - path: mlops_vera/modeling/logo.py
       hash: md5
-      md5: 471256341910c4f2089ec2237e1ab33c
-      size: 6270
+      md5: 5dc9e06c8b842d3d9ce8c4b23a8de5a4
+      size: 6304
     - path: mlops_vera/modeling/train.py
       hash: md5
-      md5: a0e16c4e53310e19d3978cbcc7210afe
-      size: 8169
+      md5: 341f49d77795d816294d43aeb67227f9
+      size: 8203
     - path: mlops_vera/tracking.py
       hash: md5
-      md5: b5a84fe8b0ee29147e29447a5b919fa2
-      size: 2659
+      md5: 6f44ad033abb8c3be8105ae775b0f7bb
+      size: 5865
     params:
       params.yaml:
         logo.n_bootstrap: 1000
@@ -337,16 +337,16 @@ stages:
       size: 776
     - path: mlops_vera/modeling/logo.py
       hash: md5
-      md5: 471256341910c4f2089ec2237e1ab33c
-      size: 6270
+      md5: 5dc9e06c8b842d3d9ce8c4b23a8de5a4
+      size: 6304
     - path: mlops_vera/modeling/train.py
       hash: md5
-      md5: a0e16c4e53310e19d3978cbcc7210afe
-      size: 8169
+      md5: 341f49d77795d816294d43aeb67227f9
+      size: 8203
     - path: mlops_vera/tracking.py
       hash: md5
-      md5: b5a84fe8b0ee29147e29447a5b919fa2
-      size: 2659
+      md5: 6f44ad033abb8c3be8105ae775b0f7bb
+      size: 5865
     params:
       params.yaml:
         logo.n_bootstrap: 1000
@@ -384,16 +384,16 @@ stages:
       size: 776
     - path: mlops_vera/modeling/logo.py
       hash: md5
-      md5: 471256341910c4f2089ec2237e1ab33c
-      size: 6270
+      md5: 5dc9e06c8b842d3d9ce8c4b23a8de5a4
+      size: 6304
     - path: mlops_vera/modeling/train.py
       hash: md5
-      md5: a0e16c4e53310e19d3978cbcc7210afe
-      size: 8169
+      md5: 341f49d77795d816294d43aeb67227f9
+      size: 8203
     - path: mlops_vera/tracking.py
       hash: md5
-      md5: b5a84fe8b0ee29147e29447a5b919fa2
-      size: 2659
+      md5: 6f44ad033abb8c3be8105ae775b0f7bb
+      size: 5865
     params:
       params.yaml:
         logo.n_bootstrap: 1000
@@ -417,12 +417,12 @@ stages:
       size: 1624
     - path: mlops_vera/modeling/logo_summary.py
       hash: md5
-      md5: fc4aa7f23b10bd5f097199cac5a8bcb4
-      size: 3446
+      md5: 38e24676d8f7ea752af5b8518128bcac
+      size: 3480
     - path: mlops_vera/tracking.py
       hash: md5
-      md5: b5a84fe8b0ee29147e29447a5b919fa2
-      size: 2659
+      md5: 6f44ad033abb8c3be8105ae775b0f7bb
+      size: 5865
     - path: reports/metrics/logo/dalle3.json
       hash: md5
       md5: 76d9cff810b0067b9c38939021f745a6
@@ -484,16 +484,16 @@ stages:
       size: 776
     - path: mlops_vera/modeling/learning_curve.py
       hash: md5
-      md5: c1eb8b48c098caf29949d9552cb24fdc
-      size: 4896
+      md5: 6567be1b9e010acaf43af940fb8400d6
+      size: 4930
     - path: mlops_vera/modeling/train.py
       hash: md5
-      md5: a0e16c4e53310e19d3978cbcc7210afe
-      size: 8169
+      md5: 341f49d77795d816294d43aeb67227f9
+      size: 8203
     - path: mlops_vera/tracking.py
       hash: md5
-      md5: b5a84fe8b0ee29147e29447a5b919fa2
-      size: 2659
+      md5: 6f44ad033abb8c3be8105ae775b0f7bb
+      size: 5865
     params:
       params.yaml:
         learning_curve:
@@ -538,12 +538,12 @@ stages:
       size: 1624
     - path: mlops_vera/metadata.py
       hash: md5
-      md5: 5edc4764d8c426ddf653ac4d02958f86
-      size: 4751
+      md5: d65b7bdc6aa51fbb11f166a36506c16f
+      size: 4785
     - path: mlops_vera/tracking.py
       hash: md5
-      md5: b5a84fe8b0ee29147e29447a5b919fa2
-      size: 2659
+      md5: 6f44ad033abb8c3be8105ae775b0f7bb
+      size: 5865
     outs:
     - path: data/interim/image_metadata.csv
       hash: md5
@@ -566,16 +566,16 @@ stages:
       size: 1624
     - path: mlops_vera/metadata.py
       hash: md5
-      md5: 5edc4764d8c426ddf653ac4d02958f86
-      size: 4751
+      md5: d65b7bdc6aa51fbb11f166a36506c16f
+      size: 4785
     - path: mlops_vera/tracking.py
       hash: md5
-      md5: b5a84fe8b0ee29147e29447a5b919fa2
-      size: 2659
+      md5: 6f44ad033abb8c3be8105ae775b0f7bb
+      size: 5865
     - path: mlops_vera/validate.py
       hash: md5
-      md5: 381a97e7963f126aa435967e3b788649
-      size: 14379
+      md5: 21eaed27f52bd7a4743742b553259508
+      size: 14413
     params:
       params.yaml:
         preprocess.img_size: 224
