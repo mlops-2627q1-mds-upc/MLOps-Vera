@@ -17,7 +17,7 @@
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{float}
-\usepackage[tableposition=top]{caption}
+\usepackage[tableposition=bottom]{caption}
 \usepackage{hyperref}
 \hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
@@ -29,6 +29,7 @@
 \begin{document}
 
 % ============================ COVER PAGE ============================
+\pagenumbering{Alph}  % not shown: keeps the cover's PDF page label apart from the report's
 \begin{titlepage}
 \centering
 \vspace*{1cm}
@@ -68,8 +69,12 @@ Task board (Jira)              & \url{https://estudiantat-team-nuqcb37u.atlassia
 \end{titlepage}
 
 % ============================== INDEX ==============================
+\pagenumbering{roman}  % the contents are not numbered
+\pagestyle{empty}
 \tableofcontents
 \newpage
+\pagestyle{plain}
+\pagenumbering{arabic}  % the report itself starts at page 1
 
 % =========================== 1. INTRODUCTION =======================
 \section{Introduction}
@@ -302,8 +307,6 @@ The repository follows the \textbf{Cookiecutter Data Science} template (v2, gene
 \begin{table}[H]
 \centering
 \small
-\caption{Repository layout.}
-\label{tab:structure}
 \begin{tabularx}{\textwidth}{@{}l Y@{}}
 \toprule
 \textbf{Path} & \textbf{Contents} \\
@@ -319,6 +322,8 @@ The repository follows the \textbf{Cookiecutter Data Science} template (v2, gene
 Root files & \texttt{pyproject.toml} and \texttt{uv.lock} (environment); \texttt{dvc.yaml}, \texttt{dvc.lock} and \texttt{params.yaml} (pipeline); \texttt{Makefile}, \texttt{README.md} and \texttt{CONTRIBUTING.md} \\
 \bottomrule
 \end{tabularx}
+\caption{Repository layout.}
+\label{tab:structure}
 \end{table}
 
 
@@ -361,8 +366,6 @@ The data, every intermediate output and the trained model are versioned with \te
 \begin{table}[H]
 \centering
 \small
-\caption{DVC pipeline. Each stage is one module of \texttt{mlops\_vera/}, with its parameters in \texttt{params.yaml}.}
-\label{tab:pipeline}
 \begin{tabularx}{\textwidth}{@{}l Y l@{}}
 \toprule
 \textbf{Stage} & \textbf{What it does} & \textbf{Output} \\
@@ -377,6 +380,8 @@ The data, every intermediate output and the trained model are versioned with \te
 \texttt{learning\_curve} & Head re-trained on growing fractions of the training captions & plot \\
 \bottomrule
 \end{tabularx}
+\caption{DVC pipeline. Each stage is one module of \texttt{mlops\_vera/}, with its parameters in \texttt{params.yaml}.}
+\label{tab:pipeline}
 \end{table}
 
 \paragraph{Reproducibility.} The dataset is pinned to a Hugging Face commit and every random step takes its seed from \texttt{params.yaml}. \texttt{dvc pull} retrieves the exact files the pipeline produced (or only the 18\,MB of embeddings and splits needed to re-train the head), \texttt{dvc status} tells whether the workspace matches \texttt{dvc.lock}, and \texttt{dvc repro} re-runs only the stages whose code, parameters or inputs changed. Head experiments run as \texttt{dvc exp run -S train.C=\ldots}: each one is stored as a DVC experiment that can be shared with \texttt{dvc exp push}, so every value of the regularisation sweep can be restored. DVC hashes file bytes, and on Windows Git checked the scripts out with CRLF line endings, so every stage looked modified and \texttt{dvc repro} re-ran the pipeline from the download; a versioned \texttt{.gitattributes} now forces LF endings on every system, and the stages write their CSV outputs with LF as well.
@@ -402,6 +407,7 @@ Training runs are named \texttt{<backbone>-logreg-<balanced|unweighted>-C<C>} so
 % \begin{figure}[h]\centering
 %   \includegraphics[width=\textwidth]{images/mlflow-runs.png}
 %   \caption{Baseline runs compared in the DagsHub MLflow UI.}
+%   \label{fig:mlflow-runs}
 % \end{figure}
 
 \paragraph{Baseline experiments.} We compared three ImageNet- or web-pretrained backbones used as frozen feature extractors: ResNet-18 and ResNet-50 (torchvision) and the image encoder of CLIP ViT-B/32 (OpenAI weights, via open\_clip). Each was trained with and without class weighting against the $\sim$5:1 fake:real imbalance (C~$=1$), giving six runs, cheap enough to run on a laptop CPU with our $\sim$7.7k-image subsample. Table~\ref{tab:baselines} shows the validation results.
@@ -410,8 +416,6 @@ Training runs are named \texttt{<backbone>-logreg-<balanced|unweighted>-C<C>} so
 \centering
 \small
 \setlength{\tabcolsep}{3.5pt}
-\caption{Baseline experiments (validation split, 1{,}254 images: 209 real, 1{,}045 AI).}
-\label{tab:baselines}
 \begin{tabular}{@{}llccccc@{}}
 \toprule
 \textbf{Backbone} & \textbf{Class weight} & \textbf{Bal.\ acc.} & \textbf{Macro-F1} & \textbf{PR-AUC (real)} & \textbf{Recall (real)} & \textbf{Train bal.\ acc.} \\
@@ -424,13 +428,13 @@ ResNet-18 & none & 0.811 & 0.686 & 0.660 & 0.904 & 0.873 \\
 ResNet-18 & balanced & 0.803 & 0.690 & 0.653 & 0.871 & 0.893 \\
 \bottomrule
 \end{tabular}
+\caption{Baseline experiments (validation split, 1{,}254 images: 209 real, 1{,}045 AI).}
+\label{tab:baselines}
 \end{table}
 
 \begin{table}[h]
 \centering
 \small
-\caption{Share of each generator's validation images detected as AI (recall per generator).}
-\label{tab:per-generator}
 \begin{tabular}{@{}llccccc@{}}
 \toprule
 \textbf{Backbone} & \textbf{Class weight} & \textbf{SD 2.1} & \textbf{SDXL} & \textbf{SD 3} & \textbf{DALL-E 3} & \textbf{MidJourney} \\
@@ -443,6 +447,8 @@ ResNet-18 & none & 0.684 & 0.713 & 0.641 & 0.794 & 0.756 \\
 ResNet-18 & balanced & 0.708 & 0.713 & 0.646 & 0.837 & 0.770 \\
 \bottomrule
 \end{tabular}
+\caption{Share of each generator's validation images detected as AI (recall per generator).}
+\label{tab:per-generator}
 \end{table}
 
 \paragraph{Findings and model selection.}
@@ -459,8 +465,6 @@ We keep \textbf{CLIP ViT-B/32} as backbone and \textbf{balanced class weights}: 
 \begin{table}[H]
 \centering
 \small
-\caption{Regularisation sweep of the CLIP ViT-B/32 head with balanced class weights (validation split).}
-\label{tab:c-sweep}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
 \textbf{C} & \textbf{Bal.\ acc.} & \textbf{Macro-F1} & \textbf{PR-AUC (real)} & \textbf{Recall (real)} & \textbf{ROC-AUC train / val} & \textbf{Threshold} \\
@@ -474,6 +478,8 @@ We keep \textbf{CLIP ViT-B/32} as backbone and \textbf{balanced class weights}: 
 0.001 & 0.935 & 0.900 & 0.937 & 0.928 & 0.992 / 0.984 & 0.427 \\
 \bottomrule
 \end{tabular}
+\caption{Regularisation sweep of the CLIP ViT-B/32 head with balanced class weights (validation split).}
+\label{tab:c-sweep}
 \end{table}
 
 The selected model is therefore \textbf{CLIP ViT-B/32 + logistic regression with balanced class weights and C~$=0.01$}, which meets all four validation targets (MR-1--MR-3); it is the configuration committed in \texttt{params.yaml} and versioned with DVC.
@@ -483,8 +489,6 @@ The selected model is therefore \textbf{CLIP ViT-B/32 + logistic regression with
 \begin{table}[H]
 \centering
 \small
-\caption{Leave-one-generator-out evaluation of the selected head (test split).}
-\label{tab:logo}
 \begin{tabular}{@{}lccc@{}}
 \toprule
 \textbf{Held-out generator} & \textbf{Balanced acc.\ (95\% CI)} & \textbf{Recall of the unseen generator} & \textbf{Recall (real)} \\
@@ -496,6 +500,8 @@ DALL-E 3 & 0.923 (0.884--0.956) & 0.920 & 0.926 \\
 MidJourney & 0.915 (0.880--0.948) & 0.904 & 0.926 \\
 \bottomrule
 \end{tabular}
+\caption{Leave-one-generator-out evaluation of the selected head (test split).}
+\label{tab:logo}
 \end{table}
 
 % ----- 2.3 Milestone 3 -----
@@ -552,8 +558,6 @@ The Pytest suite has 75 tests and covers 97\% of the package (NFR-3 asks for $\g
 \begin{table}[H]
 \centering
 \small
-\caption{Behavioural tests of the trained model.}
-\label{tab:model-tests}
 \begin{tabularx}{\textwidth}{@{}Y l l@{}}
 \toprule
 \textbf{Test} & \textbf{Requirement} & \textbf{Result} \\
@@ -566,6 +570,8 @@ Serving path (raw image $\rightarrow$ preprocessing $\rightarrow$ CLIP) gives th
 $\geq$ 90\% of decisions unchanged by mirroring, JPEG re-compression (quality 75 and 50), +10\% brightness or a half-resolution upload & robustness & 96--99\% unchanged \\
 \bottomrule
 \end{tabularx}
+\caption{Behavioural tests of the trained model.}
+\label{tab:model-tests}
 \end{table}
 
 The invariance threshold (90\%) was set after measuring the actual agreement on 60 real and 60 AI validation images, so the tests catch regressions without failing on normal variation. The serving-path test protects FR-5 before the API is built: preprocessing a raw image as the service will do yields the same embedding as in training, so there is no training/serving skew.
@@ -577,8 +583,6 @@ Great Expectations validates tables, and our data are images. We therefore turn 
 \begin{table}[H]
 \centering
 \small
-\caption{Expectation suites of the \texttt{validate\_data} stage.}
-\label{tab:suites}
 \begin{tabularx}{\textwidth}{@{}l l Y@{}}
 \toprule
 \textbf{Suite} & \textbf{One row per} & \textbf{Main expectations} \\
@@ -589,6 +593,8 @@ Great Expectations validates tables, and our data are images. We therefore turn 
 \texttt{shortcuts} & image feature & no preprocessed-image feature alone predicts the label: ROC-AUC $\leq$ 0.60 (DR-5) \\
 \bottomrule
 \end{tabularx}
+\caption{Expectation suites of the \texttt{validate\_data} stage.}
+\label{tab:suites}
 \end{table}
 
 The \texttt{shortcuts} suite turns DR-5 into a check. On the raw images, the aspect ratio alone separates real from AI images with a ROC-AUC of 0.75 (in our subsample every AI image is square, against 2.4\% of the real photos); after preprocessing, no metadata feature exceeds 0.55 (file size 0.52, brightness 0.55, contrast 0.53), which confirms that preprocessing removes the shortcut. All 32 expectations pass on our data. The stage fails if any expectation fails, so \texttt{dvc repro} stops before bad data reaches the model; it writes a summary that DVC tracks as a metric and the HTML \emph{Data Docs} of Great Expectations for inspection. To make sure the suites can actually catch problems, unit tests corrupt synthetic metadata in nine ways (non-square, black or flat image, label mismatch, caption leakage, duplicate or unreadable file, a generator missing from a split, and a file-size shortcut) and check that each one fails the suite meant to catch it.
@@ -610,6 +616,7 @@ The \texttt{shortcuts} suite turns DR-5 into a check. On the raw images, the asp
 
 % ============================ ANNEXES ===============================
 \clearpage
+\pagenumbering{gobble}  % the annex is not numbered, nor are its entries in the contents
 \appendix
 \section{Engineering Decision Notebook}
 \label{app:edn}
