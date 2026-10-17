@@ -23,6 +23,11 @@
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcommand{\guideline}[1]{\par{\color{gray}\itshape #1}\par\smallskip}
 \newcommand{\fillin}[1]{\textcolor{red}{[#1]}}  % to be completed by the team
+\newlength{\figbleed}\setlength{\figbleed}{1.2cm}  % how far the screenshots extend into each side margin
+\newsavebox{\widefigbox}
+\newenvironment{widefig}  % figure content set wider than the text, centred over it
+  {\begin{lrbox}{\widefigbox}\begin{minipage}{\dimexpr\linewidth+2\figbleed\relax}\centering}
+  {\end{minipage}\end{lrbox}\makebox[\linewidth][c]{\usebox{\widefigbox}}}
 \setlength{\tabcolsep}{5pt}
 \renewcommand{\arraystretch}{1.2}
 
@@ -285,11 +290,55 @@ We coordinate the work with the tools below, chosen so that every task, discussi
 
 \paragraph{Jira.} We selected it because it is a shared backlog with assignees and statuses, and its issue keys can be referenced from Git. In our flow we have a ticket for each task, assigned to a member and moved through \emph{To Do} $\rightarrow$ \emph{In Progress} $\rightarrow$ \emph{In Review} $\rightarrow$ \emph{Done}. When a ticket is implemented, a comment summarises the work and links its pull requests.
 
+\begin{figure}[H]
+\centering
+\begin{widefig}
+\includegraphics[width=0.695\linewidth]{images/coord-jira-board.png}\hfill
+\includegraphics[width=0.275\linewidth]{images/coord-jira-ticket.png}%
+\end{widefig}
+\caption{Jira. Left: the board, where every task is a ticket with an assignee. Right: ticket example (KAN-32), whose comments summarise the work and link its pull request (\#18).}
+\label{fig:coord-jira}
+\end{figure}
+
+\newpage
+
 \paragraph{GitHub.} Every change goes through a pull request that references its Jira ticket and is reviewed by a teammate.
+
+\begin{figure}[H]
+\centering
+\begin{widefig}
+\includegraphics[width=0.601\linewidth]{images/coord-github-prs.png}\hfill
+\includegraphics[width=0.369\linewidth]{images/coord-github-review.png}%
+\end{widefig}
+\caption{GitHub. Left: merged pull requests, titled in Conventional Commits format or with their Jira key, each with a teammate's approval. Right: the review of a pull request \#9 (KAN-12): reviewer requests changes, author pushes fixes, reviewer approves, and branch is merged into \texttt{main} and deleted.}
+\label{fig:coord-github}
+\end{figure}
 
 \paragraph{Discord.} The team's chat for messages and meetings, including day-to-day coordination such as announcing pull requests, asking for reviews, agreeing on decisions and splitting tasks.
 
-\paragraph{DagsHub.} Shared remote for the versioned data and models, and the MLflow tracking server, which each member has access to with a personal token. \\
+\begin{figure}[H]
+\centering
+\begin{widefig}
+\includegraphics[width=0.652\linewidth]{images/coord-discord.png}\hfill
+\includegraphics[width=0.318\linewidth]{images/coord-discord-todo.png}%
+\end{widefig}
+\caption{Discord. Left: \#general channel of the team's server: pull request announcements and review requests with what to review and how, review feedback, team decisions. Right: \#to-do-list channel, where tasks are listed and assigned to members.}
+\label{fig:coord-discord}
+\end{figure}
+
+\newpage
+
+\paragraph{DagsHub.} Shared remote for the versioned data and models, and the MLflow tracking server, which each member has access to with a personal token.
+
+\begin{figure}[H]
+\centering
+\begin{widefig}
+\includegraphics[width=0.573\linewidth]{images/coord-dagshub-experiments.png}\hfill
+\includegraphics[width=0.397\linewidth]{images/coord-dagshub-run.png}%
+\end{widefig}
+\caption{DagsHub. Left: the MLflow runs logged by the pipeline stages (51 in total), each tied to the Git commit it ran from, with the CodeCarbon emissions and duration of the stage. Right: the run of a model, with its parameters, metrics, logged model and charts.}
+\label{fig:coord-dagshub}
+\end{figure}
 
 
 The Jira key ties the tools together: it appears in the branch name, in the pull request description and, by convention, in the commit footers (\texttt{Refs: KAN-12}), so every change can be followed from its story to the code and back. Each member's contribution is visible in the assignees of the board and in the authors of the commits and pull requests on GitHub.
@@ -299,6 +348,8 @@ The Jira key ties the tools together: it appears in the branch name, in the pull
 % ----- 2.2 Milestone 2 -----
 \subsection{Milestone 2: Model Building -- Reproducibility}
 The data, the model and its metrics can be rebuilt from the repository and its DVC remote alone. Four practices work together: the \textbf{Cookiecutter} structure and \textbf{uv} give everyone the same layout and the same locked environment; \textbf{Git with GitHub Flow} versions the code through reviewed pull requests; \textbf{DVC} versions the data and the models as a pipeline whose outputs are stored on DagsHub; and \textbf{MLflow} records every training run. As a result, one Git commit pins the code, the parameters (\texttt{params.yaml}), the pipeline (\texttt{dvc.yaml}), the fingerprints of every data and model file (\texttt{dvc.lock}) and the environment (\texttt{uv.lock}); with DVC we can recover exactly those versions.
+
+\newpage
 
 \subsubsection{Project structure}
 
