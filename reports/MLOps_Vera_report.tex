@@ -220,7 +220,7 @@ NFR-12 & Results are repeatable and consistent: \texttt{dvc repro} at the same c
 \newpage
 
 \medskip\noindent\textbf{Challenges.}
-The project runs on general-purpose laptops and free-tier cloud, so we favour transfer learning on a small model, and the dataset must fit a free-tier DVC remote ($\sim$15\,GB) --- which Defactify ($\sim$7.5\,GB) does. We use the data under \textbf{CC BY 4.0} (non-commercial academic use, MS COCO), assuming inputs resemble the training distribution (everyday photos vs full AI images) rather than face-swaps or adversarial inputs. The main risks are:
+The project runs on general-purpose laptops and free-tier cloud, so we favour transfer learning on a small model, and the dataset must fit a free-tier DVC remote ($\sim$15\,GB) --- which Defactify ($\sim$7.5\,GB) does. We use the data under \textbf{CC BY 4.0} (MS COCO's terms for the real images), assuming inputs resemble the training distribution (everyday photos vs full AI images) rather than face-swaps or adversarial inputs. The main risks are:
 \begin{itemize}[nosep,leftmargin=1.4em]
 
 \medskip
@@ -278,7 +278,7 @@ The project runs on general-purpose laptops and free-tier cloud, so we favour tr
 
 \paragraph{Intended use.} Deciding whether an image is real or AI-generated, with a confidence score, for content-moderation back-ends, fact-checkers and developers using the API. Out of scope: face-swap or partial-manipulation forensics, adversarial inputs, generators far from the training set, and any high-stakes decision without human review.
 
-\paragraph{Evaluation.} Balanced accuracy, macro-F1, PR-AUC and recall of the minority real class, reported overall and per generator. On validation: balanced accuracy 0.935, macro-F1 0.884, recall (real) 0.947, PR-AUC (real) 0.933, and recall per generator from 0.85 (SD~3) to 0.98 (DALL-E~3). On generators left out of training, balanced accuracy is 0.898 on average and 0.822 at worst (SD~3), so MR-4 is met. The held-out test split is kept for the final evaluation in a later milestone.
+\paragraph{Evaluation.} Balanced accuracy, macro-F1, PR-AUC and recall of the minority real class, reported overall and per generator. On validation: balanced accuracy 0.935, macro-F1 0.884, recall (real) 0.947, PR-AUC (real) 0.933, and recall per generator from 0.85 (SD~3) to 0.98 (DALL-E~3). On generators left out of training, balanced accuracy is 0.898 on average and 0.822 at worst (SD~3), so MR-4 is met. The held-out test split is kept for the final evaluation of the selected model in a later milestone.
 
 \paragraph{Ethical considerations and caveats.} A detector can be evaded, and false positives may wrongly flag genuine images, so outputs are advisory and need human review. Accuracy is expected to drop on newer generators (monitored for drift and retrained when needed), and the model is only valid for COCO-like, modest-resolution images.
 
@@ -576,7 +576,7 @@ Several edited scripts are DVC dependencies, so the docstrings alone would have 
 
 \subsubsection{Model testing}
 \label{sec:model-testing}
-The Pytest suite has 75 tests and covers 97\% of the package (NFR-3 asks for $\geq$ 80\%). \textbf{Unit tests} run offline on small synthetic data and check every stage: the caption-grouped selection and split (no caption in two splits), the preprocessing output, the threshold tuning, the metrics, the MLflow logging and the leave-one-generator-out filtering. \textbf{Behavioural tests} run on the real artefacts (the saved model, the embeddings and the images) and check that the model we ship behaves as documented (Table~\ref{tab:model-tests}). They are marked \texttt{model}, so \texttt{pytest -m "not model"} keeps a fast offline run, and they are skipped when the artefacts have not been pulled.
+The Pytest suite has 78 tests and covers 98\% of the package (NFR-3 asks for $\geq$ 80\%). \textbf{Unit tests} run offline on small synthetic data and check every stage: the caption-grouped selection and split (no caption in two splits), the preprocessing output, the threshold tuning, the metrics, the MLflow logging and the leave-one-generator-out filtering. \textbf{Behavioural tests} run on the real artefacts (the saved model, the embeddings and the images) and check that the model we ship behaves as documented (Table~\ref{tab:model-tests}). They are marked \texttt{model}, so \texttt{pytest -m "not model"} keeps a fast offline run, and they are skipped when the artefacts have not been pulled.
 
 \begin{table}[H]
 \centering
