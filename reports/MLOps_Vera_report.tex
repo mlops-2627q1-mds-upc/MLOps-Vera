@@ -656,14 +656,23 @@ The \texttt{shortcuts} suite turns DR-5 into a check. On the raw images, the asp
 
 \paragraph{Challenges and barriers.}
 \begin{itemize}[nosep,leftmargin=1.4em]
-  \item \textbf{The data hid easy shortcuts.} The exploratory analysis showed that image shape alone gives the label away and that captions are shared across the original splits. Without the preprocessing and the caption-grouped re-split, the model would have looked far better than it is; the \texttt{shortcuts} and \texttt{captions} suites now check both automatically.
+
+\medskip
+
+  \item \textbf{The data hid easy shortcuts.} Our exploratory analysis showed that image shape alone gives the label away and that captions are shared across the original splits. Without our preprocessing and caption-grouped re-split, the model would have looked far better than it is by cheating; the \texttt{shortcuts} and \texttt{captions} suites now check both automatically.
+
+\medskip
+
   \item \textbf{Reproducibility across machines.} The team works on macOS and Windows. Line endings changed the hashes DVC relies on, and a change to a file shared by every stage invalidates the whole pipeline, so we had to understand exactly what DVC hashes before trusting \texttt{dvc status}.
-  \item \textbf{Tools designed for tabular data.} Great Expectations and Pynblint assume tables and recent dependencies: we validated images through their metadata, and ran Pynblint as an isolated tool.
+
+\medskip
+
+  \item \textbf{Tools that did not fit our setup.} Great Expectations validates tables while our data are images, so we validated the images through their metadata; Pynblint pins old versions of its dependencies that conflict with ours, so we run it as an isolated tool.
 \end{itemize}
 
-\paragraph{Opportunities and lessons learned.} Caching the expensive step (the frozen backbone) made every experiment cheap, which let us try many configurations, extend the regularisation sweep and evaluate each held-out generator in seconds. Writing requirements with measurable targets in Milestone~1 paid off: most tests and expectations of Milestone~3 check one of them directly. Reviewed pull requests with small commits made every change easy to follow and to revert. \fillin{the team's own lessons and what it would do differently}
+\paragraph{Opportunities and lessons learned.} Caching the embeddings of the frozen backbone made every experiment cheap, which gave us the opportunity to compare six baselines, sweep the regularisation and evaluate five held-out generators quickly and cheaply. Several tools (DVC, uv, \dots) were new to most of the team, so the first weeks went into learning them, next time we would set up the data pipeline and CI skeleton earlier and agree on conventions before writing code. We also learned that evaluating on held-out generators can be far more informative than the in-distribution validation split. Finally, we learned that using MLflow to track experiments is much cleaner and more organised than comparing results across scattered notebooks.
 
-\paragraph{Concepts from other courses.} \fillin{courses of the master whose concepts were used, e.g.\ machine learning (transfer learning, class imbalance, threshold tuning, bootstrap confidence intervals) and data engineering}
+\paragraph{Concepts from other courses.} From \emph{Machine Learning} (ML): transfer learning with a frozen pretrained backbone, class imbalance, threshold tuning, regularisation and bootstrap confidence intervals for the metrics. From \emph{Optimization Techniques for Data Mining} (OTDM): the logistic-regression head is an L2-regularised convex problem solved with L-BFGS, a quasi-Newton method. From \emph{Big Data Management} (BDM) and \emph{Algorithms, Data Structures and Databases} (ADSDB): data pipelines with versioned zones (raw, interim and processed), reproducible preprocessing, caching and data-quality checks.
 
 % ============================ ANNEXES ===============================
 \clearpage
@@ -675,7 +684,45 @@ The \texttt{shortcuts} suite turns DR-5 into a check. On the raw images, the asp
 This annex documents a selection of relevant engineering decisions made during the project, with particular attention to the role of AI in each of them, following the course's EDN instructions (v2026.0.2). An entry is created when a decision could reasonably have been made differently and has meaningful consequences for the project, or when AI contributed significantly to it. Each entry records: milestone, activity or topic, decision participants, decision, rationale, AI involvement (none, information seeking, alternative generation, alternative assessment, recommendation, solution generation or other), response to AI (accepted, accepted with modifications, rejected, used as input for further analysis or other), assessment of the AI contribution, and evidence of the AI interaction and of the project artefacts involved.
 
 \subsection{Milestone 1: Inception}
-\fillin{EDN entries of Milestone 1}
+
+\subsubsection{Defactify as the dataset}
+\noindent\textbf{Activity / topic:} Problem selection and dataset. \textbf{Participants:} Arman Bazarchi; the choice was then discussed with the team and confirmed by all members.
+
+\noindent\textbf{Decision:} Use the Defactify (MS-COCOAI) dataset: 16{,}000 real MS COCO photographs and 80{,}000 images generated from the same captions by five 2022--2024 generators, under CC BY 4.0.
+
+\noindent\textbf{Rationale:} Since the real and generated images share their captions, the content is controlled and the detector has to learn how an image was made rather than what it shows; the five generators make a cross-generator evaluation possible (MR-4), and the licence allows our use with attribution. CIFAKE was discarded for its $32\times32$ images from a single, older generator, AI-GenBench for its non-commercial licence and LAION sources, and OpenFake for its size (3.4\,TB), its non-commercial licence and its political deepfakes.
+
+\noindent\textbf{AI involvement:} Information seeking; alternative assessment. \textbf{Response to AI:} Used as input for further analysis.
+
+\noindent\textbf{Assessment of the AI contribution:} The AI gathered candidate datasets and compared their licences, sizes and generators. We checked the shortlisted datasets ourselves before choosing, for instance that Defactify's CC BY 4.0 licence is declared in its paper, since it is not tagged on Hugging Face.
+
+\noindent\textbf{Evidence:} \texttt{docs/dataset\_card.md}, \texttt{notebooks/data-exploration.ipynb}, KAN-22.
+
+\subsubsection{Remove the shape shortcut and the caption leakage}
+\noindent\textbf{Activity / topic:} Data requirements (exploratory analysis). \textbf{Participants:} Arman Bazarchi.
+
+\noindent\textbf{Decision:} Centre-crop, resize and re-encode every image in the same way (DR-5), and re-split the data by caption so that no caption appears in two splits (DR-4).
+
+\noindent\textbf{Rationale:} Our exploratory analysis showed that almost all AI images are square, against about 4\% of the real photos, so the image shape alone would give the label away, and that captions repeat across the dataset's original splits, which would leak scenes from training into validation and test. Keeping the original images and splits would have inflated the results, and dropping the non-square photos would have biased the data.
+
+\noindent\textbf{AI involvement:} Alternative generation; recommendation. \textbf{Response to AI:} Accepted.
+
+\noindent\textbf{Assessment of the AI contribution:} We found both problems ourselves and asked the AI for ways to handle them; it recommended normalising the size and format of every image and grouping the split by caption, which we adopted. The data validation later confirmed it: after preprocessing, no metadata feature predicts the label.
+
+\noindent\textbf{Evidence:} \texttt{notebooks/data-exploration.ipynb}, dataset card (``Considerations''), KAN-22, KAN-18.
+
+\subsubsection{Measurable non-functional requirements}
+\noindent\textbf{Activity / topic:} Requirements engineering. \textbf{Participants:} Arman Bazarchi.
+
+\noindent\textbf{Decision:} Following the professor's feedback on the first version, give every non-functional requirement a measurable target, such as a p95 latency of at most 300\,ms on the deployment VM, a restart within 1\,min after a crash, at most 5\,g CO$_2$eq per retraining and metrics repeatable within $\pm$0.001, and add requirements on how the component behaves in use, based on ISO/IEC 25010 and 25059: fail-safe behaviour, transparency of each prediction and rollback to any released model.
+
+\noindent\textbf{Rationale:} A requirement such as ``in a reasonable time'' cannot be verified. The time and memory targets keep a wide margin over our own measurements, and every target can be tested in the later milestones.
+
+\noindent\textbf{AI involvement:} Alternative generation: the AI proposed candidate requirements. \textbf{Response to AI:} Accepted with modifications.
+
+\noindent\textbf{Assessment of the AI contribution:} The AI proposed candidate requirements based on our measurements and the ISO characteristics, and we kept most of them and rejected some, such as a fairness requirement we could not measure without demographic labels.
+
+\noindent\textbf{Evidence:} the non-functional requirements table, pull request \#16 (KAN-26), \texttt{docs/dataset\_card.md}.
 
 \subsection{Milestone 2: Reproducibility}
 
