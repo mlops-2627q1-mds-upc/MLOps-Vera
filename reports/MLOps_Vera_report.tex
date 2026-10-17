@@ -126,12 +126,12 @@ The team reached a complete consensus on the following statement:
 \medskip\noindent\textbf{Functional (FR)}\par\smallskip
 \noindent\begin{tabularx}{\textwidth}{@{}l Y c@{}}
 \toprule
-\textbf{ID} & \textbf{Requirement} & \textbf{Pri} \\
+\textbf{ID} & \textbf{Requirement} & \textbf{Priority} \\
 \midrule
 FR-1 & Classify a single image as \texttt{real} / \texttt{ai\_generated} & M \\
 FR-2 & Return a confidence score in [0,1] with each prediction & M \\
 FR-3 & Expose prediction via a REST endpoint (\texttt{POST /predict}) returning JSON & M \\
-FR-4 & Accept JPEG/PNG/WEBP within a size limit; reject invalid input with a clear error & M \\
+FR-4 & Accept JPEG/PNG/WEBP within a size limit; reject invalid input with clear error & M \\
 FR-5 & Apply the \textbf{same} preprocessing at train and serve time (resize + re-encode) & M \\
 FR-6 & Provide health/readiness and metrics endpoints & S \\
 FR-7 & Optionally return the most-likely generator (attribution) & C \\
@@ -145,7 +145,7 @@ FR-7 & Optionally return the most-likely generator (attribution) & C \\
 \medskip\noindent\textbf{Data (DR)}\par\smallskip
 \noindent\begin{tabularx}{\textwidth}{@{}l Y c@{}}
 \toprule
-\textbf{ID} & \textbf{Requirement} & \textbf{Pri} \\
+\textbf{ID} & \textbf{Requirement} & \textbf{Priority} \\
 \midrule
 DR-1 & Use labelled real \& AI images from multiple recent generators & M \\
 DR-2 & Data \& train/validation/test splits to be versioned and reproducible (DVC) & M \\
@@ -163,10 +163,10 @@ DR-8 & Automated data-quality checks (schema, class values, missingness, \dots) 
 \medskip\noindent\textbf{Model / performance (MR)}\par\smallskip
 \noindent\begin{tabularx}{\textwidth}{@{}l Y c@{}}
 \toprule
-\textbf{ID} & \textbf{Requirement} & \textbf{Pri} \\
+\textbf{ID} & \textbf{Requirement} & \textbf{Priority} \\
 \midrule
 MR-1 & Balanced accuracy (target $\geq$ 0.85) & S \\
-MR-2 & Macro-F1 and recall on \textbf{minority} class, usually real images (targets $\geq$ 0.85 / $\geq$ 0.80) & S \\
+MR-2 & Macro-F1 and recall on \textbf{minority} (real) class (targets $\geq$ 0.85 / $\geq$ 0.80) & S \\
 MR-3 & \textbf{PR-AUC} (target $\geq$ 0.90) & S \\
 MR-4 & \textbf{Cross-generator} (leave-one-generator-out) balanced accuracy (target $\geq$ 0.70) & S \\
 MR-5 & Decision threshold based on validation results (not fixed 0.5) & M \\
@@ -184,7 +184,7 @@ MR-5 & Decision threshold based on validation results (not fixed 0.5) & M \\
 
 \noindent\begin{tabularx}{\textwidth}{@{}l Y c@{}}
 \toprule
-\textbf{ID} & \textbf{Requirement} & \textbf{Pri} \\
+\textbf{ID} & \textbf{Requirement} & \textbf{Priority} \\
 \midrule
 NFR-1 & Runs without a GPU, on a minimum of 2 CPU cores and 8\,GB of RAM: retrieving the data (\texttt{dvc pull}) takes $\leq$ 10\,min, and processing it into a trained model (preprocess, split, embed, train) $\leq$ 10\,min with a peak memory $\leq$ 3\,GB & S \medskip \\
 NFR-2 & With 10 concurrent clients, one container serves $\geq$ 5 requests/s for 5\,min with a p95 latency $\leq$ 2\,s and no failed requests; being stateless, it scales by adding replicas & S \medskip \\
@@ -289,32 +289,6 @@ We coordinate the work with the tools below, chosen so that every task, discussi
 
 The Jira key ties the tools together: it appears in the branch name, in the pull request description and, by convention, in the commit footers (\texttt{Refs: KAN-12}), so every change can be followed from its story to the code and back. Each member's contribution is visible in the assignees of the board and in the authors of the commits and pull requests on GitHub.
 
-\subsubsection{Selection of the cloud provider}
-
-In Milestone~4 the component is deployed as a REST API that only runs inference: a frozen CLIP ViT-B/32 image encoder (about 88M parameters, $\sim$350\,MB) and a logistic-regression head, on CPU. The host therefore needs around 2\,GB of RAM for the model, PyTorch and the API, plus room for the containers and the monitoring stack. It must also stay available, free of charge, for the whole course.
-
-\newpage
-
-\begin{table}[h]
-\centering
-\small
-\caption{Free tiers of the providers considered.}
-\label{tab:cloud}
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-\textbf{Provider} & \textbf{Compute} & \textbf{RAM} & \textbf{Disk} & \textbf{Free for} \\
-\midrule
-\textbf{Virtech (FIB)} & unlimited & 4\,GB & 20\,GB & 1 semester \\
-Azure Virtual Machines & 750\,h/month & 1--4\,GB & 128\,GB & 12 months \\
-AWS EC2 & 750\,h/month & 1\,GB & 30\,GB & 12 months \\
-Google Compute Engine & 750\,h/month & 0.6\,GB & 30\,GB & 12 months + 300\,USD \\
-Okteto & unlimited & 3\,GB & 5\,GB & unlimited \\
-\bottomrule
-\end{tabular}
-\end{table}
-\medskip
-
-We select \textbf{Virtech}, the FIB's private cloud (based on OpenNebula), which provides one virtual machine per team. It offers the most memory among the free options, while instances of AWS and Google Cloud are too small for the model, and Okteto's disk is tight for container images. It also has no usage limits during the semester and needs no credit card or personal cloud account. Its main limitation is that the VM only lasts one semester.
 
 
 % ----- 2.2 Milestone 2 -----
