@@ -646,9 +646,85 @@ This annex documents a selection of relevant engineering decisions made during t
 \fillin{EDN entries of Milestone 1}
 
 \subsection{Milestone 2: Reproducibility}
-\fillin{EDN entries of Milestone 2}
+
+\subsubsection{Leave-one-generator-out evaluation with a DVC \texttt{foreach} stage}
+\noindent\textbf{Activity / topic:} Data versioning (DVC pipeline). \textbf{Participants:} Adri\'an Segura.
+
+\noindent\textbf{Decision:} Evaluate the model on a generator it has never seen with a \texttt{foreach} stage, one branch per generator, plus a \texttt{logo\_summary} stage that joins the results. Each branch reuses the cached embeddings, trains without one generator and tests on the test split's real images plus that generator's images, with a bootstrap confidence interval.
+
+\noindent\textbf{Rationale:} It implements MR-4 and makes the pipeline less linear. Re-running \texttt{split} and \texttt{embed} per generator would recompute the embeddings five times, and testing on other splits would leak captions seen in training.
+
+\noindent\textbf{AI involvement:} Alternative assessment; solution generation. \textbf{Response to AI:} Accepted.
+
+\noindent\textbf{Assessment of the AI contribution:} The leave-one-generator-out idea was ours. The AI suggested reusing the embeddings, building the test set from the caption-grouped test split and adding the summary stage and the confidence interval, and helped implement it. We checked it with the tests, \texttt{dvc dag} and \texttt{dvc repro}.
+
+\noindent\textbf{Evidence:} pull request \#11 (KAN-23).
+
+\subsubsection{MR-4 checked on the worst held-out generator}
+\noindent\textbf{Activity / topic:} Evaluation criteria. \textbf{Participants:} Adri\'an Segura, raised to the team in pull request \#11.
+
+\noindent\textbf{Decision:} The cross-generator target (balanced accuracy $\geq$ 0.70) must hold for the worst held-out generator; the mean is reported as well.
+
+\noindent\textbf{Rationale:} MR-4 did not say whether it applies to the mean or to each generator, and a detector is only as robust as its weakest case. Both readings pass today (worst 0.822, mean 0.898).
+
+\noindent\textbf{AI involvement:} Recommendation. \textbf{Response to AI:} Accepted.
+
+\noindent\textbf{Assessment of the AI contribution:} The AI pointed out the ambiguity and recommended the stricter reading; we agreed and left the final choice to the team in the pull request.
+
+\noindent\textbf{Evidence:} \texttt{reports/metrics/logo\_summary.json}, pull request \#11.
+
+\subsubsection{Force LF line endings with \texttt{.gitattributes}}
+\noindent\textbf{Activity / topic:} Code and data versioning. \textbf{Participants:} Adri\'an Segura.
+
+\noindent\textbf{Decision:} Add a versioned \texttt{.gitattributes} file so every system checks the files out with LF line endings.
+
+\noindent\textbf{Rationale:} DVC hashes file bytes. On Windows, Git checked the scripts out with CRLF endings, so every stage looked modified and \texttt{dvc repro} would have re-run the whole pipeline from the download. A per-user Git setting is easy to forget; a versioned file fixes it for everyone.
+
+\noindent\textbf{AI involvement:} Information seeking; solution generation. \textbf{Response to AI:} Accepted.
+
+\noindent\textbf{Assessment of the AI contribution:} The AI found the cause by comparing the hash recorded in \texttt{dvc.lock} with the hash of the same script with CRLF and with LF endings, and proposed the fix. After applying it, \texttt{dvc status} only showed the new stages.
+
+\noindent\textbf{Evidence:} commit \emph{chore: check out text files with LF line endings} (pull request \#11).
 
 \subsection{Milestone 3: Quality assurance}
-\fillin{EDN entries of Milestone 3}
+
+\subsubsection{Validate the images through a metadata table with Great Expectations}
+\noindent\textbf{Activity / topic:} Data testing. \textbf{Participants:} Adri\'an Segura.
+
+\noindent\textbf{Decision:} Describe every image as a row of metadata (readable, format, size, brightness, contrast, hash, labels, split) and validate it with Great Expectations in a DVC stage that stops the pipeline on bad data. Four suites check the images, the captions (no leakage), the splits and the shortcuts (no metadata feature alone predicts the label).
+
+\noindent\textbf{Rationale:} Great Expectations validates tables and our data are images. Validating their metadata turns our data requirements into automated checks: no leakage (DR-4), no shortcuts (DR-5) and data quality (DR-8).
+
+\noindent\textbf{AI involvement:} Solution generation. \textbf{Response to AI:} Accepted.
+
+\noindent\textbf{Assessment of the AI contribution:} Describing the images as metadata was our approach; the AI helped implement the stages and their tests. We checked that the 32 expectations pass on our data and that each kind of corrupted data fails the right suite.
+
+\noindent\textbf{Evidence:} pull request \#13 (KAN-27), \texttt{mlops\_vera/metadata.py}, \texttt{mlops\_vera/validate.py}.
+
+\subsubsection{Behavioural tests on the trained model}
+\noindent\textbf{Activity / topic:} Model testing. \textbf{Participants:} Adri\'an Segura.
+
+\noindent\textbf{Decision:} Besides unit tests, test the real model: it meets the model-card targets, uses the tuned threshold, is reproduced by retraining, gets the same embeddings through the serving path (FR-5), and keeps at least 90\% of its decisions under small image changes (mirroring, JPEG re-compression, brightness, resolution).
+
+\noindent\textbf{Rationale:} Unit tests check the code, not whether the model we ship behaves as documented. The robustness threshold was set after measuring the actual agreement, so the tests are strict but not flaky.
+
+\noindent\textbf{AI involvement:} Solution generation. \textbf{Response to AI:} Accepted.
+
+\noindent\textbf{Assessment of the AI contribution:} We decided what to test; the AI helped implement the tests. They pass on the current model and are skipped when the artefacts have not been pulled.
+
+\noindent\textbf{Evidence:} pull request \#13, \texttt{tests/test\_model.py}.
+
+\subsubsection{Run Pynblint as an isolated tool}
+\noindent\textbf{Activity / topic:} Static analysis. \textbf{Participants:} Adri\'an Segura.
+
+\noindent\textbf{Decision:} Run Pynblint with \texttt{uvx} (\texttt{make nblint}) instead of adding it to the project's dependencies. Its only repository-level finding, missing coverage data, led us to measure coverage with \texttt{pytest-cov}.
+
+\noindent\textbf{Rationale:} Pynblint pins an old version of \texttt{typer} that conflicts with ours, so it cannot be a project dependency; an isolated tool keeps our environment clean.
+
+\noindent\textbf{AI involvement:} Information seeking; solution generation. \textbf{Response to AI:} Accepted.
+
+\noindent\textbf{Assessment of the AI contribution:} The AI found why Pynblint failed (it needs \texttt{click<8.2} and UTF-8 mode on Windows) and how to run it in isolation. We checked it on a deliberately bad notebook, where it reported 8 issues, and on ours, where it reported none.
+
+\noindent\textbf{Evidence:} pull request \#14 (KAN-15), \texttt{Makefile} (target \texttt{nblint}).
 
 \end{document}
