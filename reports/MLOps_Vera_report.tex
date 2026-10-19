@@ -336,7 +336,7 @@ We coordinate the work with the tools below, chosen so that every task, discussi
 \includegraphics[width=0.573\linewidth]{images/coord-dagshub-experiments.png}\hfill
 \includegraphics[width=0.397\linewidth]{images/coord-dagshub-run.png}%
 \end{widefig}
-\caption{DagsHub. Left: the MLflow runs logged by the pipeline stages (51 in total), each tied to the Git commit it ran from, with the CodeCarbon emissions and duration of the stage. Right: the run of a model, with its parameters, metrics, logged model and charts.}
+\caption{DagsHub. Left: the MLflow runs logged by the pipeline stages, each tied to the Git commit it ran from, with the CodeCarbon emissions and duration of the stage. Right: the run of a model, with its parameters, metrics, logged model and charts.}
 \label{fig:coord-dagshub}
 \end{figure}
 
@@ -394,7 +394,7 @@ The code is versioned with Git in a public repository of the course organisation
 
 \medskip
 
-  \item \textbf{Commits:} small, related changes, with messages following the \emph{Conventional Commits}~1.0.0  (\texttt{type(scope): description}), a body that explains what changed and why, and a Jira ticket \texttt{Refs: KAN-n} footer.
+  \item \textbf{Commits:} small, related changes, with messages following the \emph{Conventional Commits}~1.0.0  (\texttt{type (scope): description}), a body that explains what changed and why, and a Jira ticket \texttt{Refs: KAN-n} footer.
 
 \medskip
 
@@ -619,6 +619,9 @@ Great Expectations validates tables, and our data are images. We therefore turn 
 \caption{Expectation suites of the \texttt{validate\_data} stage.}
 \label{tab:suites}
 \end{table}
+
+\medskip
+\medskip
 
 The \texttt{shortcuts} suite turns DR-5 into a check. On the raw images, the aspect ratio alone separates real from AI images with a ROC-AUC of 0.75 (in our subsample every AI image is square, against 2.4\% of the real photos); after preprocessing, no metadata feature exceeds 0.55 (file size 0.52, brightness 0.55, contrast 0.53), which confirms that preprocessing removes the shortcut. All 32 expectations pass on our data. The stage fails if any expectation fails, so \texttt{dvc repro} stops before bad data reaches the model; it writes a summary that DVC tracks as a metric and the HTML \emph{Data Docs} of Great Expectations for inspection. To make sure the suites can actually catch problems, unit tests corrupt synthetic metadata in nine ways (non-square, black or flat image, label mismatch, caption leakage, duplicate or unreadable file, a generator missing from a split, and a file-size shortcut) and check that each one fails the suite meant to catch it.
 
