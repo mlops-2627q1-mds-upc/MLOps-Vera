@@ -625,6 +625,34 @@ Great Expectations validates tables, and our data are images. We therefore turn 
 
 The \texttt{shortcuts} suite turns DR-5 into a check. On the raw images, the aspect ratio alone separates real from AI images with a ROC-AUC of 0.75 (in our subsample every AI image is square, against 2.4\% of the real photos); after preprocessing, no metadata feature exceeds 0.55 (file size 0.52, brightness 0.55, contrast 0.53), which confirms that preprocessing removes the shortcut. All 32 expectations pass on our data. The stage fails if any expectation fails, so \texttt{dvc repro} stops before bad data reaches the model; it writes a summary that DVC tracks as a metric and the HTML \emph{Data Docs} of Great Expectations for inspection. To make sure the suites can actually catch problems, unit tests corrupt synthetic metadata in nine ways (non-square, black or flat image, label mismatch, caption leakage, duplicate or unreadable file, a generator missing from a split, and a file-size shortcut) and check that each one fails the suite meant to catch it.
 
+% ----- 2.4 Milestone 4 -----
+\subsection{Milestone 4: Model deployment -- API}
+In Milestone~4 the selected model is served as a REST API from a virtual machine in the cloud. Before writing the API, we designed the system: its logical and physical architecture and the cloud provider it runs on.
+
+\subsubsection{Selection of the cloud provider}
+\label{sec:cloud}
+The component is deployed as a REST API that only runs inference: a frozen CLIP ViT-B/32 image encoder (about 88M parameters, $\sim$350\,MB) and a logistic-regression head, on CPU. The host therefore needs around 2\,GB of RAM for the model, PyTorch and the API, plus room for the containers and the monitoring stack. It must also stay available, free of charge, for the whole course.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Provider} & \textbf{Compute} & \textbf{RAM} & \textbf{Disk} & \textbf{Free for} \\
+\midrule
+\textbf{Virtech (FIB)} & unlimited & 4\,GB & 20\,GB & 1 semester \\
+Azure Virtual Machines & 750\,h/month & 1--4\,GB & 128\,GB & 12 months \\
+AWS EC2 & 750\,h/month & 1\,GB & 30\,GB & 12 months \\
+Google Compute Engine & 750\,h/month & 0.6\,GB & 30\,GB & 12 months + 300\,USD \\
+Okteto & unlimited & 3\,GB & 5\,GB & unlimited \\
+\bottomrule
+\end{tabular}
+\caption{Free tiers of the providers considered.}
+\label{tab:cloud}
+\end{table}
+
+We select \textbf{Virtech}, the FIB's private cloud (based on OpenNebula), which provides one virtual machine per team. It offers the most memory among the free options, while instances of AWS and Google Cloud are too small for the model, and Okteto's disk is tight for container images. It also has no usage limits during the semester and needs no credit card or personal cloud account. Its main limitation is that the VM only lasts one semester and has no backups; since the code and the models live in GitHub and DagsHub, a lost VM is rebuilt by deploying again.
+
 % ===================== 3. SELF-EVALUATION ==========================
 \section{Self-evaluation of the project (retrospective)}
 \textit{Retrospective of Milestones 1--3; it will be completed in the final deliverable.}
