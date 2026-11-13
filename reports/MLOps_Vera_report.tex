@@ -30,6 +30,9 @@
   {\end{minipage}\end{lrbox}\makebox[\linewidth][c]{\usebox{\widefigbox}}}
 \setlength{\tabcolsep}{5pt}
 \renewcommand{\arraystretch}{1.2}
+\renewcommand{\topfraction}{0.85}  % a full-width diagram may sit at the top of a page, with text below it
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.8}
 
 \begin{document}
 
@@ -104,6 +107,7 @@ The team reached a complete consensus on the following statement:
 \subsection{Milestone 1: Inception}
 
 \subsubsection{Selection of problem and requirements engineering for ML}
+\label{sec:requirements}
 
 \paragraph{Problem selection.} Modern text-to-image generators (Stable Diffusion, DALL-E, MidJourney, \dots) produce photorealistic images at scale, fuelling misinformation, fake reviews, and trust problems for platforms and media. Reliably telling a \textbf{real photograph} from an \textbf{AI-generated image} cannot be solved with hand-written rules: the cues are subtle, generator-specific, and evolving, which makes it a genuine machine-learning problem. We target real-vs-AI detection in particular because nowadays it is increasingly difficult to recognise whether a piece of media is real or AI-generated.
 
@@ -628,6 +632,46 @@ The \texttt{shortcuts} suite turns DR-5 into a check. On the raw images, the asp
 % ----- 2.4 Milestone 4 -----
 \subsection{Milestone 4: Model deployment -- API}
 In Milestone~4 the selected model is served as a REST API from a virtual machine in the cloud. Before writing the API, we designed the system: its logical and physical architecture and the cloud provider it runs on.
+
+\subsubsection{ML-based component/system architecture}
+\label{sec:architecture}
+Following the course's views, the logical architecture is described by a UML component diagram (Figure~\ref{fig:logical-view}) and a sequence diagram of the main use case, one prediction (Figure~\ref{fig:predict-sequence}), and the physical architecture by a deployment diagram (Figure~\ref{fig:physical-view}). Each view fits on a page and has its own legend, and every component is tagged with the requirements it meets (Section~\ref{sec:requirements}), so the views also show where each requirement of the service is handled. The diagrams are drawn with draw.io, and their sources are versioned in \texttt{docs/architecture/}.
+
+\paragraph{Logical view: components.} The prediction service has three parts. The \textbf{REST API} (FastAPI) is its only entry point, with four endpoints: \texttt{POST /predict} classifies an image, \texttt{GET /model} describes the deployed model, and \texttt{GET /health} and \texttt{GET /ready} tell whether the service is alive and whether it can predict. \textbf{Input validation} accepts only JPEG, PNG or WEBP files up to 10\,MB, and checks both before decoding the image. \textbf{Inference} chains the preprocessing of the training pipeline (\texttt{preprocess\_image}), the frozen CLIP ViT-B/32 encoder, which turns the image into a 512-dimensional embedding, and the classifier head (scaler and logistic regression) with its tuned threshold of 0.57. Inference reuses the training code rather than a copy of it, so an image goes through exactly the same preprocessing at training and at serving time (FR-5); the serving-path test of Section~\ref{sec:model-testing} already checks this. The service never trains: the training pipeline pushes the classifier to the DVC remote on DagsHub, and the service loads it, with the CLIP weights from the Hugging Face Hub, once before serving.
+
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=\textwidth]{images/architecture/logical-view.pdf}
+\caption{Logical architecture (UML component diagram): the parts of the prediction service, where the model files come from, and the requirements each part meets.}
+\label{fig:logical-view}
+\end{figure}
+
+\paragraph{Logical view: one prediction.} The sequence diagram follows one \texttt{POST /predict} request, including the cases that end it early. While the model is not loaded, the API answers with a 503 error instead of a label (NFR-9). Input validation then checks the type and the size of the upload \emph{before} decoding it, so an unsupported or oversized file is rejected without being processed (415 or 413), and a file that cannot be decoded gets a 400 error (FR-4, NFR-7). The image is decoded in memory and never written to disk or to the logs (NFR-7). Inference returns the label and the score, and the response adds the decision threshold and the model version (FR-1, FR-2, NFR-10). On the VM, the whole call must answer within 300\,ms for 95\% of the requests (NFR-8).
+
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=\textwidth]{images/architecture/predict-sequence.pdf}
+\caption{Logical architecture, behaviour (UML sequence diagram): one \texttt{POST /predict} request, including its error paths.}
+\label{fig:predict-sequence}
+\end{figure}
+
+\paragraph{Physical view.} The whole service runs on one virtual machine of Virtech, the FIB's private cloud (Section~\ref{sec:cloud}). The VM is created from the template without VPN, so the API is reachable from the Internet through the FIB's NAT gateway, \texttt{nattech.fib.upc.edu}, the public address shared by all Virtech VMs: each VM gets ten public ports, from $40000 + 10n$ on, forwarded to its ports 8080--8089, where $n$ is the last byte of its private IP address. With the other template, only the UPC network and the UPC's VPN, which allows one connection per user, could reach it. The API is served by uvicorn on port 8080, as a systemd service that restarts it after a crash (NFR-6). Team members operate the VM over SSH, on port $22000 + n$, which the FIB only allows from the UPC network or through the VPN. The code, the classifier and the CLIP weights reach the VM only when it is deployed, from GitHub, DagsHub (\texttt{dvc pull}) and the Hugging Face Hub; once running, the service depends on no external service to answer a request. In Milestone~5 the service will be packaged as a Docker image, which only changes the execution environment of this view.
+
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=\textwidth]{images/architecture/physical-view.pdf}
+\caption{Physical architecture (UML deployment diagram): where the service runs on the Virtech VM, and the protocol and port of every connection; $n$ is the last byte of the VM's private IP address (172.16.4.$n$).}
+\label{fig:physical-view}
+\end{figure}
+
+\paragraph{Design patterns.}
+\begin{itemize}[nosep,leftmargin=1.4em,beginpenalty=10000]  % keeps the heading with the list
+  \item \textbf{Layers.} The API and input validation deal with HTTP and uploads; inference knows nothing about HTTP and only maps an image to a label. Either side can change (a new model, another web framework) without touching the other, and inference can be tested without a server.
+  \item \textbf{Stateless Serving Function} (Lakshmanan et al., \emph{Machine Learning Design Patterns}, 2020). The model is loaded once at start-up and no request leaves state behind, so a crash only loses the requests in progress (NFR-9), and the service scales by adding replicas (NFR-2, Milestone~5).
+  \item \textbf{Transform} (same book). The transformations from an uploaded image to the model's input are written once, in the package shared by training and serving, so the two cannot drift apart (FR-5).
+  \item \textbf{Health Endpoint Monitoring} (Microsoft's cloud design patterns). \texttt{/health} and \texttt{/ready} let Docker, a load balancer or the monitoring of Milestone~6 check the service from outside (NFR-6, NFR-9).
+  \item \textbf{Training separated from serving.} Training runs on the team's machines and serving on the VM; the only link between them is the versioned model file in DVC, so the VM needs neither the training data nor a GPU, and any released version can be deployed again (NFR-11).
+\end{itemize}
 
 \subsubsection{Selection of the cloud provider}
 \label{sec:cloud}
