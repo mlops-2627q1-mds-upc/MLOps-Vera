@@ -1,0 +1,55 @@
+# Continuous integration: the checks from CONTRIBUTING.md, run on every pull request and on
+# every push to main. The jobs run in parallel:
+#   lint         ruff, pylint and the DVC pipeline definition
+#   tests        the tests with coverage (except the model tests), then Pynblint
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new push to a pull request cancels the checks still running for its previous commit
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.12"
+      - name: Install the locked dependencies
+        run: uv sync --locked
+      - name: Lint the code (ruff format, ruff check, pylint)
+        run: make lint
+      - name: Check the DVC pipeline definition
+        run: uv run dvc dag
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.12"
+      - name: Install the locked dependencies
+        run: uv sync --locked
+      - name: Run the tests with coverage
+        run: uv run pytest -m "not model" --cov=mlops_vera --cov-report=term-missing
+      - name: Add the coverage table to the run summary
+        run: uv run coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY"
+      # Pynblint reads the coverage data that the tests wrote
+      - name: Lint the notebooks and the repository (Pynblint)
+        run: make nblint
