@@ -655,7 +655,7 @@ The logical architecture is described by a UML component diagram (Figure~\ref{fi
 \label{fig:predict-sequence}
 \end{figure}
 
-\paragraph{Physical view.} The whole service runs on one virtual machine of Virtech, the FIB's private cloud. The VM is created from the template without VPN, so the API is reachable from the Internet through the FIB's NAT gateway: each VM gets ten public ports, from $40000 + 10n$ on, forwarded to its ports 8080--8089, where $n$ is the last byte of its private IP address. With the other template, only the UPC network and the UPC's VPN, which allows one connection per user, could reach it. The API is served by uvicorn on port 8080, as a systemd service that restarts it after a crash (NFR-6). Team members operate the VM over SSH, on port $22000 + n$, which the FIB only allows from the UPC network or through the VPN. The code, the classifier and the CLIP weights reach the VM only when it is deployed, from GitHub, DagsHub (\texttt{dvc pull}) and the Hugging Face Hub; once running, the service depends on no external service to answer a request.
+\paragraph{Physical view.} The whole service runs on one virtual machine of Virtech, the FIB's private cloud. The VM is created from the template without VPN, so the API is reachable from the Internet through the FIB's NAT gateway: each VM gets ten public ports, from $40000 + 10n$ on, forwarded to its ports 8080--8089, where $n$ is the last byte of its private IP address. With the other template, only the UPC network and the UPC's VPN, which allows one connection per user, could reach it. The API is served by uvicorn on port 8080, as a systemd service that restarts it after a crash (NFR-6). Clients use plain HTTP, because HTTPS needs a certificate for a domain name of our own, and the VM only has ports on the FIB's gateway, which all Virtech VMs share. Images are still never stored (NFR-7), but they travel unencrypted; this is acceptable for a course demo with public images, while a real service would need its own domain and HTTPS. Team members operate the VM over SSH, on port $22000 + n$, which the FIB only allows from the UPC network or through the VPN. The code, the classifier and the CLIP weights reach the VM only when it is deployed, from GitHub, DagsHub (\texttt{dvc pull}) and the Hugging Face Hub; once running, the service depends on no external service to answer a request.
 
 \begin{figure}[H]
 \centering
@@ -670,11 +670,11 @@ The logical architecture is described by a UML component diagram (Figure~\ref{fi
 
 \medskip
 
-  \item \textbf{Layers.} The API and input validation deal with HTTP and uploads; inference knows nothing about HTTP and only maps an image to a label. Either side can change (a new model, another web framework) without touching the other, and inference can be tested without a server.
+  \item \textbf{Layers.} The API and input validation handle the web side: HTTP requests and uploads. Inference only turns an image into a label and knows nothing about the web. Either side can change (a new model, another web framework) without touching the other, and tests can call inference directly, without starting the API.
 
 \medskip
 
-  \item \textbf{Stateless Serving Function.} The model is loaded once at start-up and no request leaves state behind, so a crash only loses the requests in progress, and the service scales by adding replicas.
+  \item \textbf{Stateless Serving Function.} The model is loaded once at start-up, and the service remembers nothing between requests: the same image always gets the same answer. Therefore, a crash only loses the requests in progress, and more copies of the service (replicas) can run side by side to handle more traffic.
 
 \medskip
 
