@@ -5,8 +5,8 @@ the embeddings and the images. They check that the model
 
 - meets the model-card targets on validation (MR-1 to MR-3) and detects every generator;
 - classifies at the threshold tuned on validation (MR-5), and retraining reproduces it (NFR-12);
-- gives the same embeddings when an image goes through the serving path (raw image ->
-  `preprocess_image` -> backbone), i.e. no training/serving skew (FR-5);
+- gives the same embeddings when an image goes through the serving path (`Predictor`: raw
+  image -> `preprocess_image` -> backbone), i.e. no training/serving skew (FR-5);
 - keeps its decision under perturbations that do not change whether an image is real or
   AI-generated: mirroring, JPEG re-compression, a brightness change and a smaller upload, each
   applied to the uploaded image before the serving path.
@@ -22,7 +22,6 @@ import numpy as np
 import pandas as pd
 from PIL import Image, ImageEnhance, ImageOps
 import pytest
-import torch
 
 from mlops_vera.config import (
     CLASSIFIER_PATH,
@@ -31,8 +30,7 @@ from mlops_vera.config import (
     SPLITS_DIR,
     load_params,
 )
-from mlops_vera.features import preprocess_image
-from mlops_vera.modeling.embed import build_backbone, image_transform
+from mlops_vera.modeling.predict import Predictor
 from mlops_vera.modeling.train import GENERATORS, build_model, evaluate, load_split
 
 ARTEFACTS = [CLASSIFIER_PATH, EMBEDDINGS_DIR / "train.npz", EMBEDDINGS_DIR / "val.npz"]
@@ -107,20 +105,14 @@ def _jpeg(img: Image.Image, quality: int) -> Image.Image:
     return Image.open(buf).convert("RGB")
 
 
-@pytest.fixture(name="encoder", scope="module")
-def fixture_encoder(bundle):
-    """Backbone + transform of the saved model: preprocessed PIL images -> embeddings."""
+@pytest.fixture(name="predictor", scope="module")
+def fixture_predictor():
+    """Serving path of the saved model: raw PIL images -> embeddings and decisions."""
     try:
-        model, _ = build_backbone(bundle["backbone"])
+        predictor = Predictor.load()
     except OSError as err:  # weights not cached and no network
         pytest.skip(f"backbone weights unavailable: {err}")
-    transform = image_transform(bundle["backbone"])
-
-    @torch.inference_mode()
-    def encode(images: list[Image.Image]) -> np.ndarray:
-        return model(torch.stack([transform(im) for im in images])).numpy()
-
-    return encode
+    return predictor
 
 
 @pytest.fixture(name="sample", scope="module")
@@ -140,15 +132,16 @@ def fixture_sample(val):
     return idx, raws, val[1][idx]
 
 
-def _serve(raw: Image.Image) -> Image.Image:
-    """What the model sees for an uploaded image: the `preprocess` stage, JPEG included."""
-    p = load_params("preprocess")
-    return _jpeg(preprocess_image(raw, p["img_size"]), p["jpeg_quality"])
-
-
-def test_serving_path_reproduces_the_training_embeddings(encoder, sample, val):
+def test_serving_path_reproduces_the_training_embeddings(predictor, sample, val):
     idx, raws, _ = sample
-    np.testing.assert_allclose(encoder([_serve(r) for r in raws]), val[0][idx], atol=1e-4)
+    np.testing.assert_allclose(predictor.embed(raws), val[0][idx], atol=1e-4)
+
+
+def test_serving_path_reproduces_the_decisions_on_validation(bundle, predictor, sample, val):
+    idx, raws, _ = sample
+    expected = _scores(bundle, val[0][idx])
+    scores = [p.score for p in predictor.predict_batch(raws)]
+    np.testing.assert_allclose(scores, expected, atol=1e-4)
 
 
 # Changes an image can undergo before it is uploaded (e.g. when shared on social media)
@@ -162,9 +155,9 @@ PERTURBATIONS = {
 
 
 @pytest.mark.parametrize("name", PERTURBATIONS)
-def test_decision_is_invariant_to_label_preserving_perturbations(bundle, encoder, sample, name):
+def test_decision_is_invariant_to_label_preserving_perturbations(predictor, sample, name):
     _, raws, _ = sample
-    before = _scores(bundle, encoder([_serve(r) for r in raws])) >= bundle["threshold"]
-    after = _scores(bundle, encoder([_serve(PERTURBATIONS[name](r)) for r in raws]))
-    agreement = (before == (after >= bundle["threshold"])).mean()
+    before = [p.label for p in predictor.predict_batch(raws)]
+    after = [p.label for p in predictor.predict_batch([PERTURBATIONS[name](r) for r in raws])]
+    agreement = np.mean(np.array(before) == np.array(after))
     assert agreement >= MIN_AGREEMENT, f"{name} changes {1 - agreement:.1%} of the decisions"
