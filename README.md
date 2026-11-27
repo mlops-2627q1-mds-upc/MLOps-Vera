@@ -45,7 +45,8 @@ Based on [Cookiecutter Data Science](https://cookiecutter-data-science.drivendat
 │   ├── split.py           #   stage `split`
 │   ├── metadata.py        #   stage `image_metadata`
 │   ├── validate.py        #   stage `validate_data` (Great Expectations)
-│   └── modeling/          #   stages `embed`, `train`, `logo`, `learning_curve`
+│   └── modeling/          #   stages `embed`, `train`, `logo`, `learning_curve`;
+│                          #   `predict`: serving path (raw image -> decision)
 ├── models/                # Trained classifier (stage `train`, DVC)
 ├── notebooks/             # Exploratory data analysis
 ├── reports/               # LaTeX report, milestone write-ups, metrics/ (DVC metrics)
