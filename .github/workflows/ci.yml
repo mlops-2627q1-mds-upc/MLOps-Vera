@@ -1,6 +1,6 @@
 # Continuous integration: the checks from CONTRIBUTING.md, run on every pull request and on
 # every push to main. The jobs run in parallel:
-#   lint         ruff, pylint and the DVC pipeline definition
+#   lint         ruff, pylint, the DVC pipeline definition and dvc.lock
 #   tests        the tests with coverage (except the model tests), then Pynblint
 #   model-tests  the model tests, on the model and data pulled from DagsHub with DVC
 name: CI
@@ -35,6 +35,9 @@ jobs:
         run: make lint
       - name: Check the DVC pipeline definition
         run: uv run dvc dag
+      # Fails if a stage's code, parameters or inputs changed without `dvc repro`; needs no data
+      - name: Check that dvc.lock is up to date with the code and the parameters
+        run: make lockcheck
 
   tests:
     name: Tests

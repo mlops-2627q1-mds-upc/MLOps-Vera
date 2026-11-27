@@ -102,9 +102,10 @@ its CodeCarbon energy and emissions.
 **4. Quality checks.**
 
 ```bash
-make test     # pytest with coverage (model tests need `dvc pull`; skip them with -m "not model")
-make lint     # ruff + pylint
-make qa       # lint, data validation, tests and notebook lint
+make test       # pytest with coverage (model tests need `dvc pull`; skip them with -m "not model")
+make lint       # ruff + pylint
+make lockcheck  # dvc.lock is up to date with the code and params.yaml
+make qa         # lint, data validation, tests, notebook lint and the dvc.lock check
 ```
 
 The same checks run on every pull request with GitHub Actions, see

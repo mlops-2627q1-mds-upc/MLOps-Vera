@@ -91,10 +91,15 @@ validate:
 test:
 	uv run pytest --cov=mlops_vera --cov-report=term-missing
 
-## Run every quality check: lint, data validation, tests, then notebook lint (it reads the
-## coverage data that the tests write)
+## Check that dvc.lock is up to date with the code and params.yaml (if not: `dvc repro`)
+.PHONY: lockcheck
+lockcheck:
+	uv run python -m mlops_vera.lockcheck
+
+## Run every quality check: lint, data validation, tests, notebook lint (it reads the
+## coverage data that the tests write), then the dvc.lock check
 .PHONY: qa
-qa: lint validate test nblint
+qa: lint validate test nblint lockcheck
 
 
 #################################################################################

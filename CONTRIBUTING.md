@@ -97,10 +97,11 @@ uv run ruff check .
 uv run ruff format --check .
 uv run pylint mlops_vera tests
 uv run dvc dag
+make lockcheck
 uv run pytest
 ```
 
-`make qa` runs these checks plus Pynblint and the data validation (see the README).
+`make lockcheck` fails if `dvc.lock` is out of date: a stage's code, parameters or command changed, or a stage ran again but the stages after it did not. Run `uv run dvc repro` (or `uv run dvc commit` if the outputs stay the same, e.g. after a change to a comment) and commit `dvc.lock`. `make qa` runs these checks plus Pynblint and the data validation (see the README).
 
 Use `uv run ruff format .` to fix formatting and `uv run ruff check --fix .` to fix the lint errors that can be fixed automatically.
 
@@ -108,7 +109,7 @@ Use `uv run ruff format .` to fix formatting and `uv run ruff check --fix .` to 
 
 GitHub Actions runs the same checks on every pull request and on every push to `main` (`.github/workflows/ci.yml`). Three jobs run in parallel, and their results appear at the bottom of the pull request:
 
-- **Lint**: `uv sync --locked`, ruff, pylint and `dvc dag`.
+- **Lint**: `uv sync --locked`, ruff, pylint, `dvc dag` and `make lockcheck`, so the model and the metrics on DagsHub always come from the code and the parameters in Git. Both DVC checks need no data.
 - **Tests**: `pytest -m "not model"` with coverage, then Pynblint. The coverage table is in the summary of the run.
 - **Model tests**: pulls the trained model, the embeddings, the splits and the raw images from DagsHub with DVC, then runs `pytest -m model`. The job fails if any model test is skipped. The first run downloads about 600 MB from DagsHub, which takes around 20 minutes; later runs restore the data and the CLIP weights from the GitHub Actions cache.
 
