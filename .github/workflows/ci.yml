@@ -64,7 +64,8 @@ jobs:
     # Pull requests from forks get no secrets, so they cannot pull the data from DagsHub
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    # Without a cache, the pull fetches ~7,700 files from DagsHub one by one (~20 min)
+    # Without a cache, the pull fetches ~7,700 files from DagsHub: 1.5 min on GitHub's runners and
+    # up to 20 min from our laptops, so the limit leaves room for a slow DagsHub
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7

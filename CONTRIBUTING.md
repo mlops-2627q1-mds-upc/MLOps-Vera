@@ -111,7 +111,7 @@ GitHub Actions runs the same checks on every pull request and on every push to `
 
 - **Lint**: `uv sync --locked`, ruff, pylint (which fails on any error, or below 9.5/10; NFR-3), `dvc dag` and `make lockcheck`, so the model and the metrics on DagsHub always come from the code and the parameters in Git. Both DVC checks need no data.
 - **Tests**: `pytest -m "not model"` with coverage, then Pynblint. The job fails below 80% coverage (NFR-3), and the coverage table is in the summary of the run.
-- **Model tests**: pulls the trained model, the embeddings, the splits and the raw images from DagsHub with DVC, then runs `pytest -m model`. The job fails if any model test is skipped. The first run downloads about 600 MB from DagsHub, which takes around 20 minutes; later runs restore the data and the CLIP weights from the GitHub Actions cache.
+- **Model tests**: pulls the trained model, the embeddings, the splits and the raw images from DagsHub with DVC, then runs `pytest -m model`. The job fails if any model test is skipped. Without a cache, the job downloads about 600 MB from DagsHub (1.5 minutes on GitHub's runners) and takes about 4 minutes; later runs restore the data and the CLIP weights from the GitHub Actions cache.
 
 Do not merge a pull request while a check is failing. To find the cause, open the log of the failing job and run the same command locally.
 
