@@ -86,15 +86,20 @@ logo:
 validate:
 	uv run dvc repro validate_data
 
-## Run all tests with coverage (`uv run pytest -m "not model"` skips the slower model tests)
+## Run all tests with coverage, failing below 80% (NFR-3; `-m "not model"` skips the model tests)
 .PHONY: test
 test:
-	uv run pytest --cov=mlops_vera --cov-report=term-missing
+	uv run pytest --cov=mlops_vera --cov-report=term-missing --cov-fail-under=80
 
-## Run every quality check: lint, data validation, tests, then notebook lint (it reads the
-## coverage data that the tests write)
+## Check that dvc.lock is up to date with the code and params.yaml (if not: `dvc repro`)
+.PHONY: lockcheck
+lockcheck:
+	uv run python -m mlops_vera.lockcheck
+
+## Run every quality check: lint, data validation, tests, notebook lint (it reads the
+## coverage data that the tests write), then the dvc.lock check
 .PHONY: qa
-qa: lint validate test nblint
+qa: lint validate test nblint lockcheck
 
 
 #################################################################################

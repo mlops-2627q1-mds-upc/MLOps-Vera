@@ -1,5 +1,7 @@
 # MLOps-Vera
 
+[![CI](https://github.com/mlops-2627q1-mds-upc/MLOps-Vera/actions/workflows/ci.yml/badge.svg)](https://github.com/mlops-2627q1-mds-upc/MLOps-Vera/actions/workflows/ci.yml)
+
 **Detecting real vs. AI-generated images** — built, deployed, and monitored following MLOps and software-engineering best practices.
 
 > Lab project for *Machine Learning Systems in Production (MLOps)* — Master in Data Science, UPC · 2026–2027, Q1.
@@ -100,10 +102,14 @@ its CodeCarbon energy and emissions.
 **4. Quality checks.**
 
 ```bash
-make test     # pytest with coverage (model tests need `dvc pull`; skip them with -m "not model")
-make lint     # ruff + pylint
-make qa       # lint, data validation, tests and notebook lint
+make test       # pytest with coverage (model tests need `dvc pull`; skip them with -m "not model")
+make lint       # ruff + pylint
+make lockcheck  # dvc.lock is up to date with the code and params.yaml
+make qa         # lint, data validation, tests, notebook lint and the dvc.lock check
 ```
+
+The same checks run on every pull request with GitHub Actions, see
+[Continuous integration](CONTRIBUTING.md#continuous-integration).
 
 ## Licence
 

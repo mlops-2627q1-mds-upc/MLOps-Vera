@@ -60,6 +60,8 @@ force-sort-within-sections = true
 # Run with `make lint`. Deviations from the defaults, each with its reason:
 [tool.pylint.main]
 fail-under = 9.5
+# NFR-3: no errors, whatever the score (one error barely lowers a score of 10)
+fail-on = ["E"]
 
 [tool.pylint.format]
 max-line-length = 99  # same limit as ruff

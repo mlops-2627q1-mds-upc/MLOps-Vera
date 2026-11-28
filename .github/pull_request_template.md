@@ -18,6 +18,7 @@ Jira: KAN-
 
 - [ ] The title follows the commit format or the Jira style (`KAN-n: summary`)
 - [ ] `uv run ruff check .`, `uv run ruff format --check .` and `uv run pytest` pass
+- [ ] The CI checks pass (Lint, Tests, Model tests)
 - [ ] No data or credentials are committed (`data/`, `.dvc/config.local`, `.env`)
 - [ ] If the data changed: `dvc.lock` is updated and `dvc push` is done
 - [ ] README, cards or report are updated if needed

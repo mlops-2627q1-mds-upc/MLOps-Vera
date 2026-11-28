@@ -1,0 +1,113 @@
+# Continuous integration: the checks from CONTRIBUTING.md, run on every pull request and on
+# every push to main. The jobs run in parallel:
+#   lint         ruff, pylint, the DVC pipeline definition and dvc.lock
+#   tests        the tests with coverage >= 80% (except the model tests), then Pynblint
+#   model-tests  the model tests, on the model and data pulled from DagsHub with DVC
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new push to a pull request cancels the checks still running for its previous commit
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.12"
+      - name: Install the locked dependencies
+        run: uv sync --locked
+      - name: Lint the code (ruff format, ruff check, pylint)
+        run: make lint
+      - name: Check the DVC pipeline definition
+        run: uv run dvc dag
+      # Fails if a stage's code, parameters or inputs changed without `dvc repro`; needs no data
+      - name: Check that dvc.lock is up to date with the code and the parameters
+        run: make lockcheck
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.12"
+      - name: Install the locked dependencies
+        run: uv sync --locked
+      # NFR-3: coverage of at least 80%
+      - name: Run the tests with coverage
+        run: uv run pytest -m "not model" --cov=mlops_vera --cov-report=term-missing --cov-fail-under=80
+      - name: Add the coverage table to the run summary
+        run: uv run coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY"
+      # Pynblint reads the coverage data that the tests wrote
+      - name: Lint the notebooks and the repository (Pynblint)
+        run: make nblint
+
+  model-tests:
+    name: Model tests
+    # Pull requests from forks get no secrets, so they cannot pull the data from DagsHub
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    # Without a cache, the pull fetches ~7,700 files from DagsHub: 1.5 min on GitHub's runners and
+    # up to 20 min from our laptops, so the limit leaves room for a slow DagsHub
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.12"
+      - name: Install the locked dependencies
+        run: uv sync --locked
+      - name: Restore the DVC cache
+        uses: actions/cache@v6
+        with:
+          path: .dvc/cache
+          key: dvc-${{ hashFiles('dvc.lock') }}
+          restore-keys: dvc-
+      - name: Restore the CLIP weights
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/huggingface/hub
+          key: huggingface-${{ hashFiles('params.yaml', 'mlops_vera/modeling/embed.py') }}
+          restore-keys: huggingface-
+      - name: Give DVC access to DagsHub
+        env:
+          DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+          DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+        run: |
+          if [ -z "$DAGSHUB_USERNAME" ] || [ -z "$DAGSHUB_TOKEN" ]; then
+            echo "::error::Add the DAGSHUB_USERNAME and DAGSHUB_TOKEN repository secrets (see CONTRIBUTING.md)"
+            exit 1
+          fi
+          uv run dvc remote modify origin --local auth basic
+          uv run dvc remote modify origin --local user "$DAGSHUB_USERNAME"
+          uv run dvc remote modify origin --local password "$DAGSHUB_TOKEN"
+      - name: Pull the model and the data that the model tests use
+        run: >-
+          uv run dvc pull models/classifier.joblib data/processed/embeddings
+          data/processed/splits data/raw/defactify
+      - name: Run the model tests
+        run: uv run pytest -m model -rs --junitxml="$RUNNER_TEMP/model-tests.xml"
+      # The model tests skip themselves when data or weights are missing; here that is an error
+      - name: Check that no model test was skipped
+        run: |
+          if ! grep -q 'skipped="0"' "$RUNNER_TEMP/model-tests.xml"; then
+            echo "::error::Some model tests were skipped (missing DVC data or CLIP weights)"
+            exit 1
+          fi

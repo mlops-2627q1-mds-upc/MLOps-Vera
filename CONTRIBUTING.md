@@ -15,7 +15,7 @@ How we work on this repository. Code is versioned with Git using GitHub Flow, da
 
 3. Commit small, related changes using [Conventional Commits](#commit-messages), and push the branch with `git push -u origin <branch>`.
 4. Open a pull request and fill in the template (why, what is changing, how to test). Move the ticket to **En revisión**.
-5. A teammate reviews the pull request. Merge it once it has one approval, then delete the branch.
+5. A teammate reviews the pull request. Merge it once it has one approval and the [CI checks](#continuous-integration) pass, then delete the branch.
 6. Move the ticket to **Finalizado** and add a comment with the pull request link.
 
 Never push directly to `main`, never rewrite history that is already on GitHub (no force pushes), and never commit secrets (see [Data and credentials](#data-and-credentials)).
@@ -97,12 +97,25 @@ uv run ruff check .
 uv run ruff format --check .
 uv run pylint mlops_vera tests
 uv run dvc dag
+make lockcheck
 uv run pytest
 ```
 
-`make qa` runs these checks plus Pynblint and the data validation (see the README).
+`make lockcheck` fails if `dvc.lock` is out of date: a stage's code, parameters or command changed, or a stage ran again but the stages after it did not. Run `uv run dvc repro` (or `uv run dvc commit` if the outputs stay the same, e.g. after a change to a comment) and commit `dvc.lock`. `make qa` runs these checks plus Pynblint and the data validation (see the README).
 
 Use `uv run ruff format .` to fix formatting and `uv run ruff check --fix .` to fix the lint errors that can be fixed automatically.
+
+## Continuous integration
+
+GitHub Actions runs the same checks on every pull request and on every push to `main` (`.github/workflows/ci.yml`). Three jobs run in parallel, and their results appear at the bottom of the pull request:
+
+- **Lint**: `uv sync --locked`, ruff, pylint (which fails on any error, or below 9.5/10; NFR-3), `dvc dag` and `make lockcheck`, so the model and the metrics on DagsHub always come from the code and the parameters in Git. Both DVC checks need no data.
+- **Tests**: `pytest -m "not model"` with coverage, then Pynblint. The job fails below 80% coverage (NFR-3), and the coverage table is in the summary of the run.
+- **Model tests**: pulls the trained model, the embeddings, the splits and the raw images from DagsHub with DVC, then runs `pytest -m model`. The job fails if any model test is skipped. Without a cache, the job downloads about 600 MB from DagsHub (1.5 minutes on GitHub's runners) and takes about 4 minutes; later runs restore the data and the CLIP weights from the GitHub Actions cache.
+
+Do not merge a pull request while a check is failing. To find the cause, open the log of the failing job and run the same command locally.
+
+The model tests need two repository secrets, which a repository admin adds under Settings → Secrets and variables → Actions: `DAGSHUB_USERNAME` and `DAGSHUB_TOKEN` (a DagsHub access token). Pull requests from forks receive no secrets, so this job does not run for them.
 
 ## Data and credentials
 
