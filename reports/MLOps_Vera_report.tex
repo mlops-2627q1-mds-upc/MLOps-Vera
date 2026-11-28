@@ -30,6 +30,9 @@
   {\end{minipage}\end{lrbox}\makebox[\linewidth][c]{\usebox{\widefigbox}}}
 \setlength{\tabcolsep}{5pt}
 \renewcommand{\arraystretch}{1.2}
+\renewcommand{\topfraction}{0.85}  % a full-width diagram may sit at the top of a page, with text below it
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.8}
 
 \begin{document}
 
@@ -104,6 +107,7 @@ The team reached a complete consensus on the following statement:
 \subsection{Milestone 1: Inception}
 
 \subsubsection{Selection of problem and requirements engineering for ML}
+\label{sec:requirements}
 
 \paragraph{Problem selection.} Modern text-to-image generators (Stable Diffusion, DALL-E, MidJourney, \dots) produce photorealistic images at scale, fuelling misinformation, fake reviews, and trust problems for platforms and media. Reliably telling a \textbf{real photograph} from an \textbf{AI-generated image} cannot be solved with hand-written rules: the cues are subtle, generator-specific, and evolving, which makes it a genuine machine-learning problem. We target real-vs-AI detection in particular because nowadays it is increasingly difficult to recognise whether a piece of media is real or AI-generated.
 
@@ -314,7 +318,7 @@ We coordinate the work with the tools below, chosen so that every task, discussi
 \label{fig:coord-github}
 \end{figure}
 
-\paragraph{Discord.} The team's chat for messages and meetings, including day-to-day coordination such as announcing pull requests, asking for reviews, agreeing on decisions and splitting tasks.
+\paragraph{Discord.} The team's chat for messages and meetings, including day-to-day coordination such as announcing pull requests, asking for reviews, agreeing on decisions and splitting tasks. Since Milestone~4, a GitHub webhook also posts each pull request and its reviews to Discord automatically.
 
 \begin{figure}[H]
 \centering
@@ -624,6 +628,138 @@ Great Expectations validates tables, and our data are images. We therefore turn 
 \medskip
 
 The \texttt{shortcuts} suite turns DR-5 into a check. On the raw images, the aspect ratio alone separates real from AI images with a ROC-AUC of 0.75 (in our subsample every AI image is square, against 2.4\% of the real photos); after preprocessing, no metadata feature exceeds 0.55 (file size 0.52, brightness 0.55, contrast 0.53), which confirms that preprocessing removes the shortcut. All 32 expectations pass on our data. The stage fails if any expectation fails, so \texttt{dvc repro} stops before bad data reaches the model; it writes a summary that DVC tracks as a metric and the HTML \emph{Data Docs} of Great Expectations for inspection. To make sure the suites can actually catch problems, unit tests corrupt synthetic metadata in nine ways (non-square, black or flat image, label mismatch, caption leakage, duplicate or unreadable file, a generator missing from a split, and a file-size shortcut) and check that each one fails the suite meant to catch it.
+
+% ----- 2.4 Milestone 4 -----
+\subsection{Milestone 4: Model deployment -- API}
+In Milestone~4 the selected model is served as a REST API from a virtual machine in the cloud. Before writing the API, we designed the system: its logical and physical architecture and the cloud provider it runs on.
+
+\subsubsection{ML-based component/system architecture}
+\label{sec:architecture}
+The logical architecture is described by a UML component diagram (Figure~\ref{fig:logical-view}) and a sequence diagram of the main use case, one prediction (Figure~\ref{fig:predict-sequence}), and the physical architecture by a deployment diagram (Figure~\ref{fig:physical-view}). Every component is tagged with the requirements it meets, so the views also show where each requirement of the service is handled. The diagrams are drawn with draw.io, and their sources are versioned in \texttt{docs/architecture/}.
+
+\paragraph{Logical view: components.} Our prediction service has three parts. The \textbf{REST API} (FastAPI) is its only entry point, with four endpoints: \texttt{POST /predict} classifies an image, \texttt{GET /model} describes the deployed model, and \texttt{GET /health} and \texttt{GET /ready} tell whether the service is alive and whether it can predict. \textbf{Input validation} accepts only JPEG, PNG or WEBP files up to 10\,MB, and checks both before decoding the image. \textbf{Inference} chains the preprocessing of the training pipeline (\texttt{preprocess\_image}), the frozen CLIP ViT-B/32 encoder, which turns the image into a 512-dimensional embedding, and the classifier head (scaler and logistic regression) with its tuned threshold of 0.57. Inference reuses the training code rather than a copy of it, so an image goes through exactly the same preprocessing at training and at serving time (FR-5); the serving-path test of Section~\ref{sec:model-testing} already checks this. The service never trains: the training pipeline pushes the classifier to the DVC remote on DagsHub, and the service loads it, with the CLIP weights from the Hugging Face Hub, once before serving.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.70\textwidth]{images/architecture/logical-view.pdf}
+\caption{Logical architecture (UML component diagram): the parts of the prediction service, and the requirements each part meets.}
+\label{fig:logical-view}
+\end{figure}
+
+\paragraph{Logical view: one prediction.} The sequence diagram follows one \texttt{POST /predict} request, including the cases that end it early. While the model is not loaded, the API answers with a 503 error instead of a label (NFR-9). Input validation then checks the type and the size of the upload \emph{before} decoding it, so an unsupported or oversized file is rejected without being processed (415 or 413), and a file that cannot be decoded gets a 400 error (FR-4, NFR-7). The image is decoded in memory and never written to disk or to the logs (NFR-7). Inference returns the label and the score, and the response adds the decision threshold and the model version (FR-1, FR-2, NFR-10). On the VM, the whole call must answer within 300\,ms for 95\% of the requests (NFR-8).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{images/architecture/predict-sequence.pdf}
+\caption{Logical architecture, behaviour (UML sequence diagram): one \texttt{POST /predict} request, including its error paths.}
+\label{fig:predict-sequence}
+\end{figure}
+
+\paragraph{Physical view.} The whole service runs on one virtual machine of Virtech, the FIB's private cloud. The VM is created from the template without VPN, so the API is reachable from the Internet through the FIB's NAT gateway: each VM gets ten public ports, from $40000 + 10n$ on, forwarded to its ports 8080--8089, where $n$ is the last byte of its private IP address. With the other template, only the UPC network and the UPC's VPN, which allows one connection per user, could reach it. The API is served by uvicorn on port 8080, as a systemd service that restarts it after a crash (NFR-6). Clients use plain HTTP, because HTTPS needs a certificate for a domain name of our own, and the VM only has ports on the FIB's gateway, which all Virtech VMs share. Images are still never stored (NFR-7), but they travel unencrypted; this is acceptable for a course demo with public images, while a real service would need its own domain and HTTPS. Team members operate the VM over SSH, on port $22000 + n$, which the FIB only allows from the UPC network or through the VPN. The code, the classifier and the CLIP weights reach the VM only when it is deployed, from GitHub, DagsHub (\texttt{dvc pull}) and the Hugging Face Hub; once running, the service depends on no external service to answer a request.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.70\textwidth]{images/architecture/physical-view.pdf}
+\caption{Physical architecture (UML deployment diagram): where the service runs on the Virtech VM; $n$ is the last byte of the VM's private IP address (172.16.4.$n$).}
+\label{fig:physical-view}
+\end{figure}
+
+\paragraph{Design patterns.}
+
+\begin{itemize}[nosep,leftmargin=1.4em,beginpenalty=10000]  % keeps the heading with the list
+
+\medskip
+
+  \item \textbf{Layers.} The API and input validation handle the web side: HTTP requests and uploads. Inference only turns an image into a label and knows nothing about the web. Either side can change (a new model, another web framework) without touching the other, and tests can call inference directly, without starting the API.
+
+\medskip
+
+  \item \textbf{Stateless Serving Function.} The model is loaded once at start-up, and the service remembers nothing between requests: the same image always gets the same answer. Therefore, a crash only loses the requests in progress, and more copies of the service (replicas) can run side by side to handle more traffic.
+
+\medskip
+
+  \item \textbf{Transform.} The transformations from an uploaded image to the model's input are written once, in the package shared by training and serving, so the two cannot drift apart (FR-5).
+
+\medskip
+
+  \item \textbf{Health Endpoint Monitoring.} \texttt{/health} and \texttt{/ready} let Docker, a load balancer or the monitoring of Milestone~6 check the service from outside (NFR-6, NFR-9).
+
+\medskip
+
+  \item \textbf{Training separated from serving.} Training runs on the team's machines and serving on the VM; the only link between them is the versioned model file in DVC, so the VM does not need the training data, and any released version can be deployed again (NFR-11).
+\end{itemize}
+
+\subsubsection{Selection of the cloud provider}
+\label{sec:cloud}
+The component is deployed as a REST API that only runs inference: a frozen CLIP ViT-B/32 image encoder (about 88M parameters, $\sim$350\,MB) and a logistic-regression head, on CPU. The host therefore needs around 2\,GB of RAM for the model, PyTorch and the API, plus room for the containers and the monitoring stack. It must also stay available, free of charge, for the whole course.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Provider} & \textbf{Compute} & \textbf{RAM} & \textbf{Disk} & \textbf{Free for} \\
+\midrule
+\textbf{Virtech (FIB)} & unlimited & 4\,GB & 20\,GB & 1 semester \\
+Azure Virtual Machines & 750\,h/month & 1--4\,GB & 128\,GB & 12 months \\
+AWS EC2 & 750\,h/month & 1\,GB & 30\,GB & 12 months \\
+Google Compute Engine & 750\,h/month & 0.6\,GB & 30\,GB & 12 months + 300\,USD \\
+Okteto & unlimited & 3\,GB & 5\,GB & unlimited \\
+\bottomrule
+\end{tabular}
+\caption{Free tiers of the providers considered.}
+\label{tab:cloud}
+\end{table}
+
+We select \textbf{Virtech}, the FIB's private cloud (based on OpenNebula), which provides one virtual machine per team. It offers the most memory among the free options, while instances of AWS and Google Cloud are too small for the model, and Okteto's disk is tight for container images. It also has no usage limits during the semester and needs no credit card or personal cloud account. Its main limitation is that the VM only lasts one semester and has no backups. Since the code and the models live in GitHub and DagsHub, a lost VM can be rebuilt by deploying again.
+
+% ----- 2.5 Milestone 5 -----
+\subsection{Milestone 5: Model deployment -- Model packaging}
+% To be filled (KAN-76). Template: describe how the different software engineering practices and tools have been applied.
+
+\subsubsection{Container and Orchestration}
+% To be filled (KAN-65 to KAN-72). Template: e.g., Docker, Docker Compose.
+
+\subsubsection{CI/CD}
+\label{sec:ci}
+Until Milestone~4, we ran the static analysis and the tests of Milestone~3 (Sections~\ref{sec:static-analysis} and~\ref{sec:model-testing}) by hand before each pull request. Now \textbf{GitHub Actions} runs them on every pull request and on every push to \texttt{main} (workflow \texttt{.github/\allowbreak workflows/\allowbreak ci.yml}), in three jobs that run in parallel (Table~\ref{tab:ci-jobs}). Each job installs the locked environment with \texttt{uv sync -{}-locked}, which fails if \texttt{uv.lock} is out of date, and then runs the same commands as we do locally, mostly \texttt{make} targets, so a failure can be reproduced on a laptop with the same command.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}l Y@{}}
+\toprule
+\textbf{Job} & \textbf{What it checks} \\
+\midrule
+Lint & Ruff (formatting and rules) and Pylint, which fails on any error or below 9.5/10 (NFR-3); \texttt{dvc~dag}, which validates the pipeline definition; and \texttt{make lockcheck}, which checks that \texttt{dvc.lock} is up to date \\
+Tests & The unit tests, which must cover $\geq$ 80\% of the package's lines (NFR-3), with the coverage table in the summary of the run; then Pynblint \\
+Model tests & Pulls the model, the embeddings, the splits and the raw images from DagsHub with DVC, then runs the behavioural tests of Table~\ref{tab:model-tests}; fails if any of them is skipped \\
+\bottomrule
+\end{tabularx}
+\caption{Jobs of the CI workflow.}
+\label{tab:ci-jobs}
+\end{table}
+
+\paragraph{Checks on the model and the pipeline.} The behavioural tests need the real artefacts, so the model job pulls them from our DVC remote with a DagsHub token stored as a GitHub secret. On our machines, these tests skip themselves when the data has not been pulled, so that anyone can run the test suite; in CI, a skipped test would hide missing data behind a green check, so the job fails instead. \texttt{make lockcheck} protects the reproducibility of Section~\ref{sec:data-versioning}. It fails if the code, the parameters or the command of a stage changed without \texttt{dvc repro}, or if a stage ran again but the stages after it did not; in both cases, the model and the metrics on DagsHub would no longer come from the code in Git. It reads \texttt{dvc status} for the files that Git versions and the hashes recorded in \texttt{dvc.lock}, so it needs no data and takes about a second. CI does not train the model or re-run the data validation itself: these are DVC stages whose results are versioned, and \texttt{make lockcheck} checks that those results match the code.
+
+\paragraph{Speed and security.} On GitHub's runners, the lint and test jobs take about a minute each. Without a cache, the model job takes about four minutes, 1.5 of them to pull the 7{,}747 files (615\,MB) from DagsHub. The workflow therefore keeps the DVC cache and the CLIP weights in the cache of GitHub Actions, so a later run only downloads the files that changed: with the cache, the pull takes a few seconds. A new push to a pull request cancels the checks still running for its previous commit. The workflow only has read access to the repository, GitHub hides the DagsHub token in the logs, and pull requests from forks, which receive no secrets, skip the model job.
+
+\paragraph{Collaboration.} The results appear on each pull request, next to its review, so the reviewer sees them before approving; the coverage table is in the summary of each run, and a badge in the README shows the state of \texttt{main}. \texttt{CONTRIBUTING.md} adds the rule that a pull request is only merged when all its checks pass, and the pull request template has a checkbox for them. Together with the protected \texttt{main} branch (Section~\ref{sec:code-versioning}), every change reaches \texttt{main} through a reviewed pull request whose checks everyone can see.
+% To add: the Docker build (and image publication) in this workflow, with the Dockerfile (KAN-65,
+% KAN-71), and the checks made required in the branch protection of main.
+
+% ----- 2.6 Milestone 6 -----
+\subsection{Milestone 6: Monitoring}
+% To be filled (no Jira ticket yet). Template: describe how the different software engineering practices and tools have been applied.
+
+\subsubsection{Resource monitoring}
+% To be filled. Template: e.g., Grafana, Prometheus.
+
+\subsubsection{Model performance}
+% To be filled. Template: e.g., Alibi Detect.
+
+\subsubsection{Cycle: Feedback loops and retraining}
+% To be filled. Template: description of all the stages of the system pipeline, and how they are connected. Explain how the pipeline can be used to automate the retraining process.
 
 % ===================== 3. SELF-EVALUATION ==========================
 \section{Self-evaluation of the project (retrospective)}
