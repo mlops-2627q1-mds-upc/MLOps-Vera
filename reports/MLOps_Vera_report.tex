@@ -721,7 +721,33 @@ We select \textbf{Virtech}, the FIB's private cloud (based on OpenNebula), which
 % To be filled (KAN-65 to KAN-72). Template: e.g., Docker, Docker Compose.
 
 \subsubsection{CI/CD}
-% To be filled (KAN-73). Template: e.g., GitHub Actions.
+\label{sec:ci}
+Until Milestone~4, we ran the static analysis and the tests of Milestone~3 (Sections~\ref{sec:static-analysis} and~\ref{sec:model-testing}) by hand before each pull request. Now \textbf{GitHub Actions} runs them on every pull request and on every push to \texttt{main} (workflow \texttt{.github/\allowbreak workflows/\allowbreak ci.yml}), in three jobs that run in parallel (Table~\ref{tab:ci-jobs}). Each job installs the locked environment with \texttt{uv sync -{}-locked}, which fails if \texttt{uv.lock} is out of date, and then runs the same commands as we do locally, mostly \texttt{make} targets, so a failure can be reproduced on a laptop with the same command.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}l Y@{}}
+\toprule
+\textbf{Job} & \textbf{What it checks} \\
+\midrule
+Lint & Ruff (formatting and rules) and Pylint, which fails on any error or below 9.5/10 (NFR-3); \texttt{dvc~dag}, which validates the pipeline definition; and \texttt{make lockcheck}, which checks that \texttt{dvc.lock} is up to date \\
+Tests & The unit tests, which must cover $\geq$ 80\% of the package's lines (NFR-3), with the coverage table in the summary of the run; then Pynblint \\
+Model tests & Pulls the model, the embeddings, the splits and the raw images from DagsHub with DVC, then runs the behavioural tests of Table~\ref{tab:model-tests}; fails if any of them is skipped \\
+\bottomrule
+\end{tabularx}
+\caption{Jobs of the CI workflow.}
+\label{tab:ci-jobs}
+\end{table}
+
+\paragraph{Checks on the model and the pipeline.} The behavioural tests need the real artefacts, so the model job pulls them from our DVC remote with a DagsHub token stored as a GitHub secret. On our machines, these tests skip themselves when the data has not been pulled, so that anyone can run the test suite; in CI, a skipped test would hide missing data behind a green check, so the job fails instead. \texttt{make lockcheck} protects the reproducibility of Section~\ref{sec:data-versioning}. It fails if the code, the parameters or the command of a stage changed without \texttt{dvc repro}, or if a stage ran again but the stages after it did not; in both cases, the model and the metrics on DagsHub would no longer come from the code in Git. It reads \texttt{dvc status} for the files that Git versions and the hashes recorded in \texttt{dvc.lock}, so it needs no data and takes about a second. CI does not train the model or re-run the data validation itself: these are DVC stages whose results are versioned, and \texttt{make lockcheck} checks that those results match the code.
+
+\paragraph{Speed and security.} The model job is limited by DagsHub, where each file is a separate request: on a fresh clone, pulling the 7{,}747 files (615\,MB) took 18.5 minutes. The workflow therefore keeps the DVC cache and the CLIP weights in the cache of GitHub Actions, so a later run only downloads the files that changed. A new push to a pull request cancels the checks still running for its previous commit. The workflow only has read access to the repository, GitHub hides the DagsHub token in the logs, and pull requests from forks, which receive no secrets, skip the model job.
+
+\paragraph{Collaboration.} The results appear on each pull request, next to its review, so the reviewer sees them before approving; the coverage table is in the summary of each run, and a badge in the README shows the state of \texttt{main}. \texttt{CONTRIBUTING.md} adds the rule that a pull request is only merged when all its checks pass, and the pull request template has a checkbox for them. Together with the protected \texttt{main} branch (Section~\ref{sec:code-versioning}), every change reaches \texttt{main} through a reviewed pull request whose checks everyone can see.
+% To add: the Docker build (and image publication) in this workflow, with the Dockerfile (KAN-65,
+% KAN-71); after the first runs on GitHub, their run times with and without the cache, and the
+% checks made required in the branch protection of main.
 
 % ----- 2.6 Milestone 6 -----
 \subsection{Milestone 6: Monitoring}
