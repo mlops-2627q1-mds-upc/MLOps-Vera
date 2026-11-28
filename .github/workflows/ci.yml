@@ -1,7 +1,7 @@
 # Continuous integration: the checks from CONTRIBUTING.md, run on every pull request and on
 # every push to main. The jobs run in parallel:
 #   lint         ruff, pylint, the DVC pipeline definition and dvc.lock
-#   tests        the tests with coverage (except the model tests), then Pynblint
+#   tests        the tests with coverage >= 80% (except the model tests), then Pynblint
 #   model-tests  the model tests, on the model and data pulled from DagsHub with DVC
 name: CI
 
@@ -50,8 +50,9 @@ jobs:
           python-version: "3.12"
       - name: Install the locked dependencies
         run: uv sync --locked
+      # NFR-3: coverage of at least 80%
       - name: Run the tests with coverage
-        run: uv run pytest -m "not model" --cov=mlops_vera --cov-report=term-missing
+        run: uv run pytest -m "not model" --cov=mlops_vera --cov-report=term-missing --cov-fail-under=80
       - name: Add the coverage table to the run summary
         run: uv run coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY"
       # Pynblint reads the coverage data that the tests wrote
